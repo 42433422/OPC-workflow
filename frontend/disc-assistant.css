@@ -1,0 +1,549 @@
+/* 碟片助手样式 */
+.disc-assistant {
+  --disc-primary: #4f8bff;
+  --disc-glow: rgba(79, 139, 255, 0.6);
+  --disc-core: #6debbc;
+  --disc-size: 120px;
+  --disc-mini-size: 48px;
+
+  position: fixed;
+  z-index: 9999;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ========== 休眠状态 (角落小圆点) ========== */
+.disc-assistant.sleeping {
+  right: 24px;
+  bottom: 24px;
+  width: var(--disc-mini-size);
+  height: var(--disc-mini-size);
+  cursor: pointer;
+}
+
+.disc-mini {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a2342, #0d1329);
+  border: 2px solid rgba(79, 139, 255, 0.4);
+  box-shadow:
+    0 0 20px rgba(79, 139, 255, 0.3),
+    inset 0 0 20px rgba(79, 139, 255, 0.1);
+  position: relative;
+  animation: disc-breathe 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+.disc-mini::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(109, 235, 188, 0.8), transparent 50%);
+}
+
+.disc-mini::after {
+  content: "小碟";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.disc-assistant.sleeping:hover .disc-mini {
+  transform: scale(1.1);
+  border-color: rgba(79, 139, 255, 0.8);
+  box-shadow:
+    0 0 30px rgba(79, 139, 255, 0.5),
+    inset 0 0 30px rgba(79, 139, 255, 0.2);
+}
+
+@keyframes disc-breathe {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(79, 139, 255, 0.3),
+      inset 0 0 15px rgba(79, 139, 255, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(79, 139, 255, 0.5),
+      inset 0 0 25px rgba(79, 139, 255, 0.2);
+  }
+}
+
+/* ========== 唤醒状态 (完整碟片) ========== */
+.disc-assistant.awake {
+  right: 50%;
+  bottom: 50%;
+  transform: translate(50%, 50%);
+  width: var(--disc-size);
+  height: var(--disc-size);
+}
+
+.disc-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  animation: disc-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes disc-appear {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* 外环 */
+.disc-outer-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: linear-gradient(135deg, #1a2342, #0d1329) padding-box,
+              linear-gradient(135deg, var(--disc-primary), var(--disc-core)) border-box;
+  box-shadow:
+    0 0 40px var(--disc-glow),
+    0 0 80px rgba(79, 139, 255, 0.3),
+    inset 0 0 40px rgba(79, 139, 255, 0.1);
+}
+
+/* 旋转环 */
+.disc-spinning-ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px dashed rgba(79, 139, 255, 0.5);
+  animation: disc-spin 8s linear infinite;
+}
+
+@keyframes disc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 内环 */
+.disc-inner-ring {
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #121829, #0b1020);
+  border: 1px solid rgba(79, 139, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 核心 */
+.disc-core {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--disc-core), var(--disc-primary));
+  box-shadow:
+    0 0 30px var(--disc-glow),
+    inset 0 -2px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: disc-pulse 2s ease-in-out infinite;
+}
+
+@keyframes disc-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* 核心内部细节 */
+.disc-core::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 50%);
+}
+
+.disc-core::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ========== 聆听状态 (声波效果) ========== */
+.disc-assistant.listening .disc-core {
+  animation: disc-listen 0.5s ease-in-out infinite alternate;
+}
+
+.disc-assistant.listening .disc-spinning-ring {
+  animation-duration: 2s;
+  border-style: solid;
+  border-color: var(--disc-core);
+}
+
+@keyframes disc-listen {
+  0% { transform: scale(1); box-shadow: 0 0 30px var(--disc-glow); }
+  100% { transform: scale(1.15); box-shadow: 0 0 50px var(--disc-glow), 0 0 80px var(--disc-core); }
+}
+
+/* 声波环 */
+.disc-sound-waves {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+}
+
+.disc-sound-waves .wave {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--disc-core);
+  opacity: 0;
+  animation: disc-wave 1.5s ease-out infinite;
+}
+
+.disc-sound-waves .wave:nth-child(1) { animation-delay: 0s; }
+.disc-sound-waves .wave:nth-child(2) { animation-delay: 0.5s; }
+.disc-sound-waves .wave:nth-child(3) { animation-delay: 1s; }
+
+@keyframes disc-wave {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ========== 处理中状态 ========== */
+.disc-assistant.processing .disc-spinning-ring {
+  animation-duration: 0.8s;
+  border-color: var(--disc-core);
+  border-style: dashed;
+}
+
+.disc-assistant.processing .disc-core {
+  animation: disc-process 1s linear infinite;
+}
+
+@keyframes disc-process {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ========== 对话面板 ========== */
+.disc-chat-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 100px;
+  width: 360px;
+  max-width: calc(100vw - 48px);
+  background: linear-gradient(145deg, rgba(21, 27, 47, 0.98), rgba(11, 16, 32, 0.98));
+  border-radius: 20px;
+  border: 1px solid rgba(79, 139, 255, 0.3);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(79, 139, 255, 0.2);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  animation: panel-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 9998;
+}
+
+@keyframes panel-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.disc-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(79, 139, 255, 0.2), rgba(109, 235, 188, 0.1));
+  border-bottom: 1px solid rgba(79, 139, 255, 0.2);
+}
+
+.disc-chat-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.disc-chat-title::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--disc-core);
+  box-shadow: 0 0 10px var(--disc-core);
+  animation: status-blink 2s ease-in-out infinite;
+}
+
+@keyframes status-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.disc-chat-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.disc-chat-close:hover {
+  background: rgba(255, 92, 122, 0.3);
+  color: #fff;
+}
+
+.disc-chat-body {
+  padding: 16px 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.disc-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.disc-message {
+  display: flex;
+  gap: 10px;
+  animation: message-appear 0.3s ease;
+}
+
+@keyframes message-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.disc-message.user {
+  flex-direction: row-reverse;
+}
+
+.disc-message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.disc-message.assistant .disc-message-avatar {
+  background: linear-gradient(135deg, var(--disc-primary), var(--disc-core));
+}
+
+.disc-message.user .disc-message-avatar {
+  background: linear-gradient(135deg, #5a66ff, #4f8bff);
+}
+
+.disc-message-content {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.disc-message.assistant .disc-message-content {
+  background: rgba(79, 139, 255, 0.15);
+  border: 1px solid rgba(79, 139, 255, 0.2);
+  color: #e8f0ff;
+  border-top-left-radius: 4px;
+}
+
+.disc-message.user .disc-message-content {
+  background: linear-gradient(135deg, #4f8bff, #5a66ff);
+  color: #fff;
+  border-top-right-radius: 4px;
+}
+
+/* 输入区域 */
+.disc-chat-input-area {
+  padding: 12px 20px 16px;
+  border-top: 1px solid rgba(79, 139, 255, 0.2);
+  display: flex;
+  gap: 10px;
+}
+
+.disc-chat-input {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(79, 139, 255, 0.3);
+  background: rgba(4, 7, 19, 0.8);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.disc-chat-input:focus {
+  border-color: var(--disc-primary);
+  box-shadow: 0 0 0 2px rgba(79, 139, 255, 0.2);
+}
+
+.disc-chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.disc-chat-send {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--disc-primary), var(--disc-core));
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.disc-chat-send:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--disc-glow);
+}
+
+/* 快捷操作按钮 */
+.disc-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 20px 12px;
+}
+
+.disc-quick-btn {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(79, 139, 255, 0.3);
+  background: rgba(79, 139, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.disc-quick-btn:hover {
+  background: rgba(79, 139, 255, 0.25);
+  border-color: rgba(79, 139, 255, 0.5);
+  color: #fff;
+}
+
+/* 语音识别提示 */
+.disc-voice-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 200px;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  background: rgba(11, 16, 32, 0.95);
+  border-radius: 24px;
+  border: 1px solid rgba(79, 139, 255, 0.4);
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: hint-fade-in 0.3s ease;
+  z-index: 10000;
+}
+
+/* 提示 / 遮罩在标记 hidden 时真正隐藏 */
+.disc-voice-hint.hidden {
+  display: none !important;
+}
+
+@keyframes hint-fade-in {
+  0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.disc-voice-hint::before {
+  content: "🎤";
+  font-size: 16px;
+}
+
+/* 遮罩层 */
+.disc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 9997;
+  animation: overlay-fade-in 0.3s ease;
+}
+
+.disc-overlay.hidden {
+  display: none !important;
+}
+
+@keyframes overlay-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* 隐藏状态 */
+.disc-assistant.hidden {
+  display: none;
+}
+
+.disc-chat-panel.hidden {
+  display: none;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .disc-chat-panel {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: 90px;
+  }
+
+  .disc-assistant.awake {
+    --disc-size: 100px;
+  }
+}

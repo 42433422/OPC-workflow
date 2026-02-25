@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>公司员工管理 Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./disc-assistant.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+  <div class="app-root">
+    <!-- 顶部 AI 功能菜单 -->
+    <nav class="ai-menu">
+      <div class="ai-menu-header">
+        <div class="ai-menu-brand">
+          <i class="ph ph-sparkle ai-menu-icon"></i>
+          <h3>AI 功能中心</h3>
+        </div>
+        <button id="ai-menu-toggle" class="ai-menu-toggle">
+          <i class="ph ph-list"></i>
+        </button>
+      </div>
+      <div class="ai-menu-content">
+        <div class="ai-menu-section">
+          <h4><i class="ph ph-brain"></i> 大模型配置</h4>
+          <button class="ai-menu-btn" data-function="ai-config">
+            <i class="ph ph-key"></i>
+            <span>API 密钥管理</span>
+          </button>
+          <button class="ai-menu-btn" data-function="ai-models">
+            <i class="ph ph-cpu"></i>
+            <span>模型选择</span>
+          </button>
+        </div>
+        <div class="ai-menu-section">
+          <h4><i class="ph ph-sparkle"></i> 智能助手</h4>
+          <button class="ai-menu-btn" data-function="ai-assistant">
+            <i class="ph ph-chat-circle-dots"></i>
+            <span>AI 助手</span>
+          </button>
+          <button class="ai-menu-btn" data-function="ai-analysis">
+            <i class="ph ph-chart-bar"></i>
+            <span>员工分析</span>
+          </button>
+        </div>
+        <div class="ai-menu-section">
+          <h4><i class="ph ph-currency-circle-dollar"></i> 财务 / 工具</h4>
+          <button class="ai-menu-btn" data-function="ai-finance">
+            <i class="ph ph-receipt"></i>
+            <span>模型花费报表</span>
+          </button>
+          <button class="ai-menu-btn" data-function="ai-video">
+            <i class="ph ph-video-camera"></i>
+            <span>AI 视频平台</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 左侧：开放式大工作台（结构图画布） -->
+    <div class="workspace">
+      <div id="org-canvas" class="org-canvas">
+        <!-- 画布区域，后续可放节点，目前是空白可拖动画布 -->
+      </div>
+    </div>
+
+    <!-- 右侧：控制台（添加 / 编辑员工 + 列表） -->
+    <aside class="side-panel">
+      <header class="app-header">
+        <div class="app-header-brand">
+          <i class="ph ph-buildings"></i>
+          <h1>公司工作台</h1>
+        </div>
+        <p class="subtitle">右侧管理员工，左侧是开放式公司结构画布。</p>
+      </header>
+
+      <section class="card form-card">
+        <div class="card-title">
+          <i class="ph ph-user-plus"></i>
+          <h2>添加 / 编辑员工</h2>
+        </div>
+        <form id="employee-form">
+          <input type="hidden" id="employee-id" />
+
+          <div class="form-row">
+            <label for="employee-name">
+              <i class="ph ph-user"></i> 员工姓名
+            </label>
+            <input id="employee-name" type="text" placeholder="请输入员工姓名，例如：张三" required />
+          </div>
+
+          <div class="form-row">
+            <label for="employee-role">
+              <i class="ph ph-crown"></i> 职位名称（自定义）
+            </label>
+            <input id="employee-role" type="text" placeholder="请输入职位名称，例如：项目经理 / 宣传专员" required />
+          </div>
+
+          <div class="form-row">
+            <label for="employee-dept">
+              <i class="ph ph-users-three"></i> 部门
+            </label>
+            <select id="employee-dept" required>
+              <option value="">请选择部门</option>
+              <option value="董事会">董事会</option>
+              <option value="总经理办公室">总经理办公室</option>
+              <option value="项目部">项目部</option>
+              <option value="宣传部">宣传部</option>
+              <option value="程序部">程序部</option>
+              <option value="市场部">市场部</option>
+              <option value="人事部">人事部</option>
+              <option value="财务部">财务部</option>
+              <option value="运营部">运营部</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="employee-note">
+              <i class="ph ph-note"></i> 备注（可选）
+            </label>
+            <input id="employee-note" type="text" placeholder="例如：负责 AI 项目 / 核心骨干 等" />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-btn" id="save-btn">
+              <i class="ph ph-floppy-disk"></i> 保存员工
+            </button>
+            <button type="button" class="secondary-btn" id="reset-btn">
+              <i class="ph ph-arrow-counter-clockwise"></i> 清空表单
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card list-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="ph ph-users"></i>
+            <h2>员工列表</h2>
+          </div>
+          <div class="filters">
+            <select id="filter-dept">
+              <option value="">按部门筛选</option>
+            </select>
+            <select id="filter-role">
+              <option value="">按职位筛选</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>姓名</th>
+                <th>职位</th>
+                <th>部门</th>
+                <th>备注</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="employee-table-body">
+              <!-- 动态渲染 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- AI 配置弹窗 -->
+  <div id="ai-modal" class="modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">API 密钥配置</h2>
+        <button class="modal-close" id="modal-close">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- 动态内容 -->
+      </div>
+    </div>
+  </div>
+
+  <script src="./disc-assistant.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

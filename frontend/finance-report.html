@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>财务部工作台 - 模型花费子项目</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./disc-assistant.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top left, #101827 0, #020617 45%, #000 100%);
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-primary);
+    }
+    .finance-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 32px 20px 40px;
+      box-sizing: border-box;
+    }
+    .finance-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 18px 22px;
+      border-radius: 16px;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%),
+                  radial-gradient(circle at top right, rgba(94, 234, 212, 0.16), transparent 55%),
+                  rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.8);
+    }
+    .filters-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 160px;
+    }
+    .filter-group label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .filter-group select {
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+    .finance-header h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .finance-header-subtitle {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .project-tabs {
+      display: inline-flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .project-tab {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.8);
+      color: #9ca3af;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .project-tab.active {
+      background: rgba(34, 197, 94, 0.18);
+      border-color: rgba(34, 197, 94, 0.8);
+      color: #bbf7d0;
+    }
+    .project-tab.badge {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+    .finance-header .actions {
+      display: flex;
+      gap: 12px;
+    }
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .summary-card {
+      position: relative;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 60%),
+                  rgba(15, 23, 42, 0.9);
+      border-radius: 14px;
+      padding: 18px 18px 16px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      overflow: hidden;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.7);
+    }
+    .summary-card .value {
+      font-size: 26px;
+      font-weight: bold;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .summary-card .label {
+      font-size: 14px;
+      color: #9ca3af;
+    }
+    .summary-card .badge {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 26px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+    }
+    th, td {
+      padding: 11px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.85);
+    }
+    th {
+      background: rgba(15, 23, 42, 0.98);
+      font-weight: 600;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    td {
+      color: #d1d5db;
+      font-size: 13px;
+    }
+    tr:hover td {
+      background: rgba(31, 41, 55, 0.9);
+    }
+    .loading {
+      text-align: center;
+      padding: 32px;
+      color: #9ca3af;
+    }
+    .empty {
+      text-align: center;
+      padding: 32px;
+      color: #6b7280;
+    }
+    .trend-chart {
+      height: 180px;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 12px 10px 6px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 12px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      overflow-x: auto;
+      box-sizing: border-box;
+    }
+    .trend-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      min-width: 26px;
+      gap: 4px;
+    }
+    .trend-bar-inner {
+      width: 100%;
+      border-radius: 6px 6px 2px 2px;
+      background: linear-gradient(to top, #22c55e, #4ade80);
+    }
+    .trend-bar-label {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+    .topn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .topn-card {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 12px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 12px 14px;
+    }
+    .topn-card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e5e7eb;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .topn-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .topn-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.7);
+    }
+    .topn-item:last-child {
+      border-bottom: none;
+    }
+    .topn-item-label {
+      color: #d1d5db;
+    }
+    .topn-item-value {
+      color: #38bdf8;
+      font-weight: 500;
+    }
+    .budget-table-note {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+    .budget-over {
+      color: #fecaca;
+    }
+    .budget-under {
+      color: #bbf7d0;
+    }
+    .budget-near {
+      color: #fde68a;
+    }
+    .insight-box {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 12px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #d1d5db;
+    }
+    .insight-box ul {
+      padding-left: 18px;
+      margin: 6px 0 0;
+    }
+    .insight-box li {
+      margin-bottom: 4px;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #22c55e;
+      color: #022c22;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .btn-primary:hover {
+      background: #16a34a;
+    }
+    .btn-secondary {
+      background: rgba(15, 23, 42, 0.7);
+      color: #e5e7eb;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-secondary:hover {
+      background: rgba(31, 41, 55, 0.9);
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #9ca3af;
+      text-decoration: none;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .back-link:hover {
+      color: #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="finance-container">
+    <a href="./index.html" class="back-link">
+      <i class="ph ph-arrow-left"></i> 返回公司工作台
+    </a>
+    
+    <div class="finance-header">
+      <div>
+        <h1>💰 财务部工作台</h1>
+        <div class="finance-header-subtitle">
+          面向财务部的工作看板，当前展示的是「AI 花费」子项目：总览调用量、费用，并按部门 / 员工 / 项目拆分。
+        </div>
+        <div class="project-tabs">
+          <div class="project-tab active">
+            <i class="ph ph-sparkle"></i><span>AI 花费报表</span>
+          </div>
+          <div class="project-tab badge">
+            <i class="ph ph-dots-three-outline"></i><span>更多财务子项目（预留）</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="loadData()">
+          <i class="ph ph-arrow-clockwise"></i> 刷新数据
+        </button>
+        <button class="btn btn-primary" onclick="exportDoc()">
+          <i class="ph ph-file-text"></i> 导出 Word 报表
+        </button>
+      </div>
+    </div>
+
+    <div id="summary-cards" class="summary-cards">
+      <div class="summary-card">
+        <span class="badge"><i class="ph ph-activity"></i>调用</span>
+        <div class="value" id="total-calls">-</div>
+        <div class="label">总调用次数</div>
+      </div>
+      <div class="summary-card">
+        <span class="badge"><i class="ph ph-coins"></i>用量</span>
+        <div class="value" id="total-tokens">-</div>
+        <div class="label">总 Tokens</div>
+      </div>
+      <div class="summary-card">
+        <span class="badge"><i class="ph ph-currency-circle-dollar"></i>成本</span>
+        <div class="value" id="total-cost">-</div>
+        <div class="label">总预计费用(元)</div>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label for="date-range">时间范围</label>
+        <select id="date-range">
+          <option value="all">全部</option>
+          <option value="7">近 7 天</option>
+          <option value="30">近 30 天</option>
+          <option value="90">近 90 天</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="provider-filter">提供商</label>
+        <select id="provider-filter">
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="source-type-filter">来源类型</label>
+        <select id="source-type-filter">
+          <option value="">全部</option>
+          <option value="department">部门</option>
+          <option value="employee">员工</option>
+          <option value="project">项目</option>
+          <option value="assistant">小碟助手</option>
+          <option value="global-assistant">顶部 AI 助手</option>
+        </select>
+      </div>
+    </div>
+
+    <h2 class="section-title"><i class="ph ph-chart-line-up"></i> 费用趋势（按日）</h2>
+    <div id="trend-chart" class="trend-chart">
+      <div class="loading">加载中...</div>
+    </div>
+
+    <h2 class="section-title"><i class="ph ph-trophy"></i> TopN 排行</h2>
+    <div class="topn-grid">
+      <div class="topn-card">
+        <div class="topn-card-title">
+          <i class="ph ph-cpu"></i>模型费用 Top 5
+        </div>
+        <ul id="topn-models" class="topn-list">
+          <li class="loading">加载中...</li>
+        </ul>
+      </div>
+      <div class="topn-card">
+        <div class="topn-card-title">
+          <i class="ph ph-users-three"></i>来源费用 Top 5
+        </div>
+        <ul id="topn-sources" class="topn-list">
+          <li class="loading">加载中...</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="section-title"><i class="ph ph-wallet"></i> 部门预算对比（示例）</h2>
+    <div class="budget-table-note">
+      以下预算为示例数据，可根据实际公司年度预算配置在前端或后端。
+    </div>
+    <table id="budget-table">
+      <thead>
+        <tr>
+          <th>部门</th>
+          <th>预算（元/月）</th>
+          <th>实际（元）</th>
+          <th>偏差</th>
+          <th>偏差率</th>
+        </tr>
+      </thead>
+      <tbody id="budget-tbody">
+        <tr><td colspan="5" class="loading">加载中...</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-title"><i class="ph ph-lightbulb-filament"></i> 💡 财务洞察</h2>
+    <div id="insight-box" class="insight-box">
+      正在分析数据...
+    </div>
+
+    <h2 class="section-title"><i class="ph ph-cpu"></i> 按提供商-模型统计</h2>
+    <table id="provider-table">
+      <thead>
+        <tr>
+          <th>提供商</th>
+          <th>模型</th>
+          <th>Prompt Tokens</th>
+          <th>Completion Tokens</th>
+          <th>Total Tokens</th>
+          <th>预计费用(元)</th>
+        </tr>
+      </thead>
+      <tbody id="provider-tbody">
+        <tr><td colspan="6" class="loading">加载中...</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-title"><i class="ph ph-users-three"></i> 按来源统计（部门 / 员工 / 项目 / 助手）</h2>
+    <table id="source-table">
+      <thead>
+        <tr>
+          <th>来源类型</th>
+          <th>来源名称</th>
+          <th>Prompt Tokens</th>
+          <th>Completion Tokens</th>
+          <th>Total Tokens</th>
+          <th>预计费用(元)</th>
+        </tr>
+      </thead>
+      <tbody id="source-tbody">
+        <tr><td colspan="6" class="loading">加载中...</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-title"><i class="ph ph-list-magnifying-glass"></i> 详细调用记录</h2>
+    <table id="detail-table">
+      <thead>
+        <tr>
+          <th>时间</th>
+          <th>提供商</th>
+          <th>模型</th>
+          <th>Prompt</th>
+          <th>Completion</th>
+          <th>Total</th>
+          <th>来源</th>
+        </tr>
+      </thead>
+      <tbody id="detail-tbody">
+        <tr><td colspan="7" class="loading">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080';
+
+    let allRecords = [];
+    // 示例部门月度预算（元），当前全部设为 0，表示尚未录入正式预算
+    const DEPT_BUDGET = {
+      '程序部': 0,
+      '宣传部': 0,
+      '项目部': 0,
+      '财务部': 0,
+      '市场部': 0,
+      '人事部': 0,
+      '运营部': 0
+    };
+
+    function inDateRange(time, days) {
+      if (!days || days === 'all') return true;
+      const t = new Date(time).getTime();
+      if (Number.isNaN(t)) return false;
+      const now = Date.now();
+      const delta = days * 24 * 60 * 60 * 1000;
+      return now - t <= delta;
+    }
+
+    function applyFilters() {
+      const rangeVal = document.getElementById('date-range').value;
+      const providerVal = document.getElementById('provider-filter').value;
+      const sourceTypeVal = document.getElementById('source-type-filter').value;
+
+      const days = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
+
+      return allRecords.filter(rec => {
+        if (days && !inDateRange(rec.time, days)) return false;
+        if (providerVal && rec.provider !== providerVal) return false;
+        const srcType = rec.source?.type || 'unknown';
+        if (sourceTypeVal && srcType !== sourceTypeVal) return false;
+        return true;
+      });
+    }
+
+    function rebuildProviderFilterOptions(records) {
+      const select = document.getElementById('provider-filter');
+      const old = select.value;
+      const set = new Set(records.map(r => r.provider).filter(Boolean));
+      select.innerHTML = '<option value="">全部</option>';
+      Array.from(set).sort().forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        select.appendChild(opt);
+      });
+      if (old && set.has(old)) {
+        select.value = old;
+      }
+    }
+
+    function renderTrendChart(dateAggCost) {
+      const container = document.getElementById('trend-chart');
+      if (!container) return;
+      const entries = Object.entries(dateAggCost).sort((a, b) => a[0].localeCompare(b[0]));
+      if (!entries.length) {
+        container.innerHTML = '<div class="empty">暂无趋势数据</div>';
+        return;
+      }
+      const max = Math.max(...entries.map(([, v]) => v)) || 1;
+      const bars = entries.map(([day, cost]) => {
+        const h = Math.max(8, (cost / max) * 100);
+        const label = day.slice(5); // MM-DD
+        return `
+          <div class="trend-bar" title="${day}：约 ${cost.toFixed(2)} 元">
+            <div class="trend-bar-inner" style="height: ${h}%"></div>
+            <span class="trend-bar-label">${label}</span>
+          </div>
+        `;
+      });
+      container.innerHTML = bars.join('');
+    }
+
+    function renderTopN(providerAgg, sourceAgg) {
+      const modelList = document.getElementById('topn-models');
+      const sourceList = document.getElementById('topn-sources');
+      if (!modelList || !sourceList) return;
+
+      const modelArr = [];
+      Object.entries(providerAgg).forEach(([prov, models]) => {
+        Object.entries(models).forEach(([model, stat]) => {
+          modelArr.push({
+            label: `${prov} / ${model}`,
+            cost: stat.total_cost || 0
+          });
+        });
+      });
+      modelArr.sort((a, b) => b.cost - a.cost);
+      const topModels = modelArr.slice(0, 5);
+      if (!topModels.length) {
+        modelList.innerHTML = '<li class="empty">暂无数据</li>';
+      } else {
+        modelList.innerHTML = topModels.map(item => `
+          <li class="topn-item">
+            <span class="topn-item-label">${item.label}</span>
+            <span class="topn-item-value">${item.cost.toFixed(2)} 元</span>
+          </li>
+        `).join('');
+      }
+
+      const sourceArr = [];
+      Object.values(sourceAgg).forEach(stat => {
+        sourceArr.push({
+          type: stat.type,
+          label: stat.label,
+          cost: stat.total_cost || 0
+        });
+      });
+      sourceArr.sort((a, b) => b.cost - a.cost);
+      const topSources = sourceArr.slice(0, 5);
+      if (!topSources.length) {
+        sourceList.innerHTML = '<li class="empty">暂无数据</li>';
+      } else {
+        sourceList.innerHTML = topSources.map(item => `
+          <li class="topn-item">
+            <span class="topn-item-label">${item.label} (${item.type})</span>
+            <span class="topn-item-value">${item.cost.toFixed(2)} 元</span>
+          </li>
+        `).join('');
+      }
+    }
+
+    function renderBudgetTable(sourceAgg) {
+      const tbody = document.getElementById('budget-tbody');
+      if (!tbody) return;
+      const rows = [];
+      Object.entries(DEPT_BUDGET).forEach(([dept, budget]) => {
+        const key = Object.keys(sourceAgg).find(k => k.startsWith('department:') && k.includes(dept));
+        const stat = key ? sourceAgg[key] : null;
+        const actual = stat ? (stat.total_cost || 0) : 0;
+        const diff = actual - budget;
+        const rate = budget ? diff / budget : 0;
+        let cls = '';
+        if (diff > 0 && rate > 0.1) cls = 'budget-over';
+        else if (diff < 0 && Math.abs(rate) > 0.1) cls = 'budget-under';
+        else if (Math.abs(rate) >= 0.05) cls = 'budget-near';
+        rows.push(`
+          <tr>
+            <td>${dept}</td>
+            <td>${budget.toFixed(2)}</td>
+            <td>${actual.toFixed(2)}</td>
+            <td class="${cls}">${diff >= 0 ? '+' : ''}${diff.toFixed(2)}</td>
+            <td class="${cls}">${(rate * 100).toFixed(1)}%</td>
+          </tr>
+        `);
+      });
+      tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="5" class="empty">暂无预算配置</td></tr>';
+    }
+
+    function renderInsights(totalCost, providerAgg, sourceAgg, dateAggCost) {
+      const box = document.getElementById('insight-box');
+      if (!box) return;
+      if (!totalCost) {
+        box.textContent = '当前数据量较少，暂未发现明显的成本特征。';
+        return;
+      }
+      const insights = [];
+
+      // 1. 成本集中在哪些模型 / 厂商
+      let maxModelLabel = '';
+      let maxModelCost = 0;
+      Object.entries(providerAgg).forEach(([prov, models]) => {
+        Object.entries(models).forEach(([model, stat]) => {
+          const cost = stat.total_cost || 0;
+          if (cost > maxModelCost) {
+            maxModelCost = cost;
+            maxModelLabel = `${prov} / ${model}`;
+          }
+        });
+      });
+      if (maxModelCost > 0) {
+        const share = (maxModelCost / totalCost) * 100;
+        insights.push(`当前 AI 成本主要集中在「${maxModelLabel}」，约占总成本的 ${share.toFixed(1)}%。`);
+      }
+
+      // 2. 是否有部门明显超出预算
+      let worstDept = null;
+      let worstRate = 0;
+      Object.entries(DEPT_BUDGET).forEach(([dept, budget]) => {
+        const key = Object.keys(sourceAgg).find(k => k.startsWith('department:') && k.includes(dept));
+        const stat = key ? sourceAgg[key] : null;
+        const actual = stat ? (stat.total_cost || 0) : 0;
+        if (!budget) return;
+        const rate = budget ? (actual - budget) / budget : 0;
+        if (rate > worstRate && rate > 0.1) {
+          worstRate = rate;
+          worstDept = { dept, budget, actual, rate };
+        }
+      });
+      if (worstDept) {
+        insights.push(`「${worstDept.dept}」AI 成本超出本月预算约 ${(worstDept.rate * 100).toFixed(1)}%，建议复查调用策略或预算设置。`);
+      }
+
+      // 3. 趋势是否有明显抬升
+      const days = Object.entries(dateAggCost).sort((a, b) => a[0].localeCompare(b[0]));
+      if (days.length >= 5) {
+        const last = days[days.length - 1][1];
+        const prevAvg = days.slice(0, -1).reduce((sum, [, v]) => sum + v, 0) / (days.length - 1);
+        if (last > prevAvg * 1.4 && last > 50) {
+          insights.push(`最近一天的 AI 成本（约 ${last.toFixed(2)} 元）明显高于前期平均水平，建议排查是否有集中大批量调用。`);
+        }
+      }
+
+      if (!insights.length) {
+        box.textContent = '当前各项成本均在合理范围内，未发现明显异常。';
+        return;
+      }
+      box.innerHTML = `<ul>${insights.map(t => `<li>${t}</li>`).join('')}</ul>`;
+    }
+
+    async function loadData() {
+      try {
+        document.getElementById('provider-tbody').innerHTML = '<tr><td colspan="6" class="loading">加载中...</td></tr>';
+        document.getElementById('source-tbody').innerHTML = '<tr><td colspan="6" class="loading">加载中...</td></tr>';
+        document.getElementById('detail-tbody').innerHTML = '<tr><td colspan="7" class="loading">加载中...</td></tr>';
+
+        // 先拉取原始调用记录
+        const rawResp = await fetch(`${API_BASE}/api/usage-records`);
+        if (!rawResp.ok) throw new Error(`加载失败（${rawResp.status}）`);
+        allRecords = await rawResp.json();
+
+        // 初始化提供商筛选选项
+        rebuildProviderFilterOptions(allRecords);
+
+        // 按当前筛选条件重新统计
+        const records = applyFilters();
+
+        let totalTokens = 0;
+        let totalCost = 0;
+        let totalCalls = records.length;
+
+        const providerAgg = {};
+        const sourceAgg = {};
+        const dateAggTokens = {};
+
+        records.forEach(rec => {
+          const prov = rec.provider || 'unknown';
+          const model = rec.model || 'unknown';
+          const u = rec.usage || {};
+          const prompt = u.prompt_tokens || 0;
+          const completion = u.completion_tokens || 0;
+          const total = u.total_tokens || (prompt + completion);
+
+          totalTokens += total;
+
+          if (!providerAgg[prov]) providerAgg[prov] = {};
+          if (!providerAgg[prov][model]) {
+            providerAgg[prov][model] = {
+              prompt_tokens: 0,
+              completion_tokens: 0,
+              total_tokens: 0,
+              total_cost: 0
+            };
+          }
+          providerAgg[prov][model].prompt_tokens += prompt;
+          providerAgg[prov][model].completion_tokens += completion;
+          providerAgg[prov][model].total_tokens += total;
+
+          const src = rec.source || {};
+          const srcType = src.type || 'unknown';
+          const srcLabel =
+            srcType === 'employee'
+              ? (src.employeeName || `员工#${src.employeeId || '-'}`)
+              : srcType === 'department'
+                ? (src.deptName || '某部门')
+                : srcType === 'project'
+                  ? (src.projectName || '某项目')
+                  : srcType === 'assistant'
+                    ? '小碟助手'
+                    : srcType === 'global-assistant'
+                      ? '顶部 AI 助手'
+                      : '未标注来源';
+          const key = `${srcType}:${srcLabel}`;
+          if (!sourceAgg[key]) {
+            sourceAgg[key] = {
+              type: srcType,
+              label: srcLabel,
+              prompt_tokens: 0,
+              completion_tokens: 0,
+              total_tokens: 0,
+              total_cost: 0
+            };
+          }
+          sourceAgg[key].prompt_tokens += prompt;
+          sourceAgg[key].completion_tokens += completion;
+          sourceAgg[key].total_tokens += total;
+
+          if (rec.time) {
+            const dayKey = new Date(rec.time).toISOString().slice(0, 10);
+            if (!dateAggTokens[dayKey]) dateAggTokens[dayKey] = 0;
+            dateAggTokens[dayKey] += total;
+          }
+        });
+
+        // 简单按统一单价估算费用（详细单价已在服务器 Word 报表中处理）
+        const pricePerK = 0.02;
+        Object.values(providerAgg).forEach(models => {
+          Object.values(models).forEach(stat => {
+            stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
+            totalCost += stat.total_cost;
+          });
+        });
+        Object.values(sourceAgg).forEach(stat => {
+          stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
+        });
+
+        const dateAggCost = {};
+        Object.entries(dateAggTokens).forEach(([day, tokens]) => {
+          dateAggCost[day] = +(tokens / 1000 * pricePerK).toFixed(2);
+        });
+
+        const providerRows = [];
+        Object.entries(providerAgg).forEach(([prov, models]) => {
+          Object.entries(models).forEach(([model, stat]) => {
+            providerRows.push(`
+              <tr>
+                <td>${prov}</td>
+                <td>${model}</td>
+                <td>${stat.prompt_tokens || 0}</td>
+                <td>${stat.completion_tokens || 0}</td>
+                <td>${stat.total_tokens || 0}</td>
+                <td>${(stat.total_cost || 0).toFixed(4)}</td>
+              </tr>
+            `);
+          });
+        });
+
+        const sourceRows = [];
+        Object.values(sourceAgg).forEach(stat => {
+          sourceRows.push(`
+            <tr>
+              <td>${stat.type}</td>
+              <td>${stat.label}</td>
+              <td>${stat.prompt_tokens || 0}</td>
+              <td>${stat.completion_tokens || 0}</td>
+              <td>${stat.total_tokens || 0}</td>
+              <td>${(stat.total_cost || 0).toFixed(4)}</td>
+            </tr>
+          `);
+        });
+
+        document.getElementById('total-calls').textContent = totalCalls;
+        document.getElementById('total-tokens').textContent = totalTokens.toLocaleString();
+        document.getElementById('total-cost').textContent = totalCost.toFixed(4);
+
+        document.getElementById('provider-tbody').innerHTML = providerRows.length ? providerRows.join('') : '<tr><td colspan="6" class="empty">暂无数据</td></tr>';
+        document.getElementById('source-tbody').innerHTML = sourceRows.length ? sourceRows.join('') : '<tr><td colspan="6" class="empty">暂无数据</td></tr>';
+
+        // 明细表
+        const detailRows = records.map(rec => {
+          const srcType = rec.source?.type || 'unknown';
+          const srcLabel = srcType === 'employee' ? rec.source?.employeeName :
+                         srcType === 'department' ? rec.source?.deptName :
+                         srcType === 'project' ? rec.source?.projectName :
+                         srcType === 'assistant' ? '小碟助手' :
+                         srcType === 'global-assistant' ? '顶部 AI 助手' : '未知';
+          return `
+            <tr>
+              <td>${rec.time ? new Date(rec.time).toLocaleString('zh-CN') : '-'}</td>
+              <td>${rec.provider}</td>
+              <td>${rec.model}</td>
+              <td>${rec.usage?.prompt_tokens || 0}</td>
+              <td>${rec.usage?.completion_tokens || 0}</td>
+              <td>${rec.usage?.total_tokens || 0}</td>
+              <td>${srcLabel}</td>
+            </tr>
+          `;
+        });
+        document.getElementById('detail-tbody').innerHTML = detailRows.length ? detailRows.join('') : '<tr><td colspan="7" class="empty">暂无数据</td></tr>';
+
+        // 趋势图 / TopN / 预算对比 / 洞察
+        renderTrendChart(dateAggCost);
+        renderTopN(providerAgg, sourceAgg);
+        renderBudgetTable(sourceAgg);
+        renderInsights(totalCost, providerAgg, sourceAgg, dateAggCost);
+
+      } catch (error) {
+        console.error('加载失败:', error);
+        document.getElementById('provider-tbody').innerHTML = `<tr><td colspan="6" class="empty">加载失败: ${error.message}</td></tr>`;
+        document.getElementById('source-tbody').innerHTML = `<tr><td colspan="6" class="empty">加载失败: ${error.message}</td></tr>`;
+        document.getElementById('detail-tbody').innerHTML = `<tr><td colspan="7" class="empty">加载失败: ${error.message}</td></tr>`;
+      }
+    }
+
+    function exportDoc() {
+      // 复用后端已有的 Word/RTF 报表导出接口
+      window.open(`${API_BASE}/api/usage-report-doc`, '_blank');
+    }
+
+    document.getElementById('date-range').addEventListener('change', loadData);
+    document.getElementById('provider-filter').addEventListener('change', loadData);
+    document.getElementById('source-type-filter').addEventListener('change', loadData);
+
+    loadData();
+  </script>
+</body>
+</html>

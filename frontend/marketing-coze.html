@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>宣传部 · 扣子视频文案生成</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #0f172a 0, #020617 45%, #000 100%);
+      color: var(--text-primary, #e5e7eb);
+    }
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+      box-sizing: border-box;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #9ca3af;
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .back-link:hover {
+      color: #e5e7eb;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 20px 18px 18px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .title h1 {
+      margin: 0;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #e5e7eb;
+    }
+    .title p {
+      margin: 0;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #bae6fd;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #e5e7eb;
+    }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      border-radius: 10px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+      color: #e5e7eb;
+      padding: 10px 12px;
+      font-size: 13px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    textarea::placeholder {
+      color: #6b7280;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(to right, #22c55e, #16a34a);
+      color: #022c22;
+      font-weight: 500;
+      box-shadow: 0 10px 24px rgba(34, 197, 94, 0.28);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(to right, #16a34a, #15803d);
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(22, 163, 74, 0.35);
+    }
+    .btn-secondary {
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+    .status {
+      font-size: 12px;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+    .status.error span.dot {
+      background: #f97373;
+    }
+    .status.loading span.dot {
+      background: #facc15;
+    }
+    .result-card {
+      margin-top: 18px;
+      padding: 14px 12px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      max-height: 380px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #e5e7eb;
+    }
+    .result-card.empty {
+      color: #6b7280;
+      text-align: center;
+      font-size: 13px;
+    }
+    @media (max-width: 640px) {
+      .header {
+        flex-direction: column;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-primary {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a href="./index.html" class="back-link">
+      <i class="ph ph-arrow-left"></i> 返回公司工作台
+    </a>
+
+    <div class="card">
+      <div class="header">
+        <div class="title">
+          <h1>
+            <i class="ph ph-megaphone-simple"></i>
+            宣传部 · 扣子视频文案生成
+          </h1>
+          <p>基于 Coze 工作流，一句话生成短视频脚本（含分镜与旁白），方便宣传部快速出方案。</p>
+        </div>
+        <div class="badge">
+          <i class="ph ph-sparkle"></i>
+          工作流：video-script-generator-001
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="topic-input">
+          <i class="ph ph-quotes"></i>
+          输入视频主题 / 简要需求
+        </label>
+        <textarea id="topic-input" placeholder="例如：春节促销活动视频脚本（门店+线上双渠道，45秒左右，适合短视频投放）"></textarea>
+      </div>
+
+      <div class="controls">
+        <button id="generate-btn" class="btn btn-primary">
+          <i class="ph ph-magic-wand"></i>
+          生成视频文案
+        </button>
+        <div class="status" id="status-bar">
+          <span class="dot"></span>
+          <span>已准备就绪，点击生成开始调用 Coze 工作流。</span>
+        </div>
+      </div>
+
+      <div id="result-card" class="result-card empty">
+        暂无结果，请先在上方输入主题并点击「生成视频文案」。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080';
+
+    const topicInput = document.getElementById('topic-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const statusBar = document.getElementById('status-bar');
+    const resultCard = document.getElementById('result-card');
+
+    function setStatus(type, text) {
+      statusBar.classList.remove('error', 'loading');
+      if (type === 'error') statusBar.classList.add('error');
+      if (type === 'loading') statusBar.classList.add('loading');
+      const dot = statusBar.querySelector('.dot');
+      if (dot) {
+        if (type === 'error') dot.style.background = '#f97373';
+        else if (type === 'loading') dot.style.background = '#facc15';
+        else dot.style.background = '#22c55e';
+      }
+      statusBar.querySelector('span:nth-child(2)').textContent = text;
+    }
+
+    async function generateScript() {
+      const topic = (topicInput.value || '').trim();
+      if (!topic) {
+        alert('请先输入一个视频主题或简要需求。');
+        return;
+      }
+
+      generateBtn.disabled = true;
+      generateBtn.innerHTML = '<i class="ph ph-spinner-gap"></i> 生成中...';
+      setStatus('loading', '正在调用 Coze 工作流，请稍候...');
+      resultCard.classList.add('empty');
+      resultCard.textContent = '正在生成文案...';
+
+      try {
+        const resp = await fetch(API_BASE + '/api/coze-workflow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic })
+        });
+
+        if (!resp.ok) {
+          const text = await resp.text();
+          throw new Error('后端返回错误：' + resp.status + ' - ' + text);
+        }
+
+        const data = await resp.json();
+        const content = data.script_content || data.content || JSON.stringify(data, null, 2);
+
+        resultCard.classList.remove('empty');
+        resultCard.textContent = content || '工作流已返回，但未找到 script_content 字段。';
+        setStatus('ok', '生成完成，可以根据需要修改、二次润色。');
+      } catch (e) {
+        console.error(e);
+        resultCard.classList.add('empty');
+        resultCard.textContent = '生成失败：' + e.message;
+        setStatus('error', '生成失败，请检查后端 / Coze 配置后重试。');
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="ph ph-magic-wand"></i> 生成视频文案';
+      }
+    }
+
+    generateBtn.addEventListener('click', generateScript);
+    topicInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        generateScript();
+      }
+    });
+  </script>
+</body>
+</html>
+
+
