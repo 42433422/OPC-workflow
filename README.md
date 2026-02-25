@@ -1,88 +1,88 @@
- OPC-workflow
+# OPC-workflow
 
-One-person company workflow
+个人公司工作流程管理系统
 
-## Project Introduction
+## 项目简介
 
-OPC-workflow is a workflow management system designed for one-person companies, helping individual entrepreneurs efficiently manage daily work, projects, and finances.
+OPC-workflow 是一个专为个人公司设计的工作流程管理系统，帮助个人创业者高效管理日常工作、项目和财务。
 
-## Features
+## 功能特性
 
-- **Frontend Interface**: Provides an intuitive user interface with dashboard, financial reports, market analysis, and other features
-- **Backend Service**: Node.js-based backend service that handles data storage and business logic
-- **Data Management**: Supports management and export of employee information, model usage, financial reports, etc.
-- **Automated Workflow**: Integrates with Coze AI assistant to实现 intelligent workflow automation
+- **前端界面**：提供直观的用户界面，包括仪表盘、财务报表、市场分析等功能
+- **后端服务**：基于 Node.js 构建的后端服务，处理数据存储和业务逻辑
+- **数据管理**：支持员工信息、模型用量、财务报表等数据的管理和导出
+- **自动化工作流**：集成 Coze AI 助手，实现智能工作流程自动化
 
-## Technology Stack
+## 技术栈
 
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Backend**: Node.js, Express
-- **Data Storage**: JSON files (local development environment)
-- **AI Integration**: Coze AI platform
+- **前端**：HTML5, CSS3, JavaScript
+- **后端**：Node.js, Express
+- **数据存储**：JSON 文件（本地开发环境）
+- **AI 集成**：Coze AI 平台
 
-## Quick Start
+## 快速开始
 
-### Environment Requirements
+### 环境要求
 
-- Node.js 14.0 or higher
-- npm 6.0 or higher
+- Node.js 14.0 或更高版本
+- npm 6.0 或更高版本
 
-### Installation Steps
+### 安装步骤
 
-1. **Clone the repository**
+1. **克隆仓库**
    ```bash
    git clone https://github.com/42433422/OPC-workflow.git
    cd OPC-workflow
    ```
 
-2. **Install dependencies**
+2. **安装依赖**
    ```bash
    npm install
    cd backend
    npm install
    ```
 
-3. **Start the service**
+3. **启动服务**
    ```bash
-   # Start backend service
+   # 启动后端服务
    cd backend
    node server.js
    
-   # Frontend access
-   # Open browser and visit http://localhost:3000
+   # 前端访问
+   # 打开浏览器访问 http://localhost:3000
    ```
 
-## Project Structure
+## 项目结构
 
 ```
 OPC-workflow/
-├── backend/           # Backend service
-│   ├── data/          # Data files
-│   ├── package.json   # Backend dependencies
-│   └── server.js      # Backend entry point
-├── frontend/          # Frontend interface
-│   ├── index.html     # Main page
-│   ├── app.js         # Frontend logic
-│   └── style.css      # Style files
-├── scripts/           # Script files
-├── package.json       # Project dependencies
-├── LICENSE            # Apache 2.0 License
-└── README.md          # Project documentation
+├── backend/           # 后端服务
+│   ├── data/          # 数据文件
+│   ├── package.json   # 后端依赖
+│   └── server.js      # 后端入口
+├── frontend/          # 前端界面
+│   ├── index.html     # 主页面
+│   ├── app.js         # 前端逻辑
+│   └── style.css      # 样式文件
+├── scripts/           # 脚本文件
+├── package.json       # 项目依赖
+├── LICENSE            # Apache 2.0 许可证
+└── README.md          # 项目说明
 ```
 
-## License
+## 许可证
 
-This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
+本项目采用 Apache 2.0 许可证。详见 [LICENSE](LICENSE) 文件。
 
-## Contribution
+## 贡献
 
-Welcome to submit Issues and Pull Requests to improve the project.
+欢迎提交 Issue 和 Pull Request 来改进项目。
 
-## Contact
+## 联系方式
 
-If you have any questions or suggestions, please contact us through GitHub Issues.
+如有问题或建议，请通过 GitHub Issues 与我们联系。
 
-## Version Information
+## 版本信息
 
-- **Current Version**: v1.0.0
-- **Release Date**: 2026-02-26
+- **当前版本**：v1.0.0
+- **发布日期**：2026-02-26
