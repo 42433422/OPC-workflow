@@ -49,7 +49,7 @@ OPC-workflow 是一个专为个人公司设计的工作流程管理系统，帮�
    node server.js
    
    # 前端访问
-   # 打开浏览器访问 http://localhost:3000
+   # 打开浏览器访问 http://localhost:8080
    ```
 
 ## 项目结构
