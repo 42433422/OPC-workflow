@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # OPC-workflow
+=======
+ OPC-workflow
+>>>>>>> c1243920e59be98b77b480eee6ddd2cd4daa3deb
 
 One-person company workflow
 
@@ -30,6 +34,7 @@ OPC-workflow is a workflow management system designed for one-person companies, 
 ### Installation Steps
 
 1. **Clone the repository**
+<<<<<<< HEAD
    `ash
    git clone https://github.com/42433422/OPC-workflow.git
    cd OPC-workflow
@@ -44,17 +49,41 @@ OPC-workflow is a workflow management system designed for one-person companies, 
 
 3. **Start the service**
    `ash
+=======
+   ```bash
+   git clone https://github.com/42433422/OPC-workflow.git
+   cd OPC-workflow
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   cd backend
+   npm install
+   ```
+
+3. **Start the service**
+   ```bash
+>>>>>>> c1243920e59be98b77b480eee6ddd2cd4daa3deb
    # Start backend service
    cd backend
    node server.js
    
    # Frontend access
    # Open browser and visit http://localhost:3000
+<<<<<<< HEAD
    `
 
 ## Project Structure
 
 `
+=======
+   ```
+
+## Project Structure
+
+```
+>>>>>>> c1243920e59be98b77b480eee6ddd2cd4daa3deb
 OPC-workflow/
 ├── backend/           # Backend service
 │   ├── data/          # Data files
@@ -68,7 +97,11 @@ OPC-workflow/
 ├── package.json       # Project dependencies
 ├── LICENSE            # Apache 2.0 License
 └── README.md          # Project documentation
+<<<<<<< HEAD
 `
+=======
+```
+>>>>>>> c1243920e59be98b77b480eee6ddd2cd4daa3deb
 
 ## License
 
@@ -85,4 +118,8 @@ If you have any questions or suggestions, please contact us through GitHub Issue
 ## Version Information
 
 - **Current Version**: v1.0.0
+<<<<<<< HEAD
 - **Release Date**: 2026-02-26
+=======
+- **Release Date**: 2026-02-26
+>>>>>>> c1243920e59be98b77b480eee6ddd2cd4daa3deb
