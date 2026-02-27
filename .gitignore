@@ -18,7 +18,7 @@ node_modules/
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+.sw?
 
 # 操作系统文件
 Thumbs.db
@@ -34,3 +34,22 @@ coverage/
 # 临时文件
 tmp/
 temp/
+
+# 敏感数据文件 - 必须忽略！
+backend/data/sessions.json
+backend/data/users.json
+backend/data/app.db
+backend/data/*.db
+
+# 语音模型文件夹
+GPT-SoVITS-beta0706/
+
+# 图片和媒体文件
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.mp3
+*.wav
+*.mp4
+*.ico
