@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>剪映小助手 - JSON 草稿导入</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .input-group input,
+    .input-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      font-family: inherit;
+    }
+
+    .input-group input:focus,
+    .input-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .input-group textarea {
+      min-height: 200px;
+      resize: vertical;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+      margin-left: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+      display: block;
+    }
+
+    .template-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    .template-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .template-btn {
+      padding: 8px 16px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .template-btn:hover {
+      background: #e8e8e8;
+      border-color: #667eea;
+    }
+
+    .help-text {
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .help-text code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: white;
+      text-decoration: none;
+      margin-bottom: 20px;
+      opacity: 0.9;
+      transition: opacity 0.3s;
+    }
+
+    .back-link:hover {
+      opacity: 1;
+    }
+
+    .json-preview {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    .json-preview pre {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 50px;
+      right: 50px;
+      height: 2px;
+      background: #e0e0e0;
+      z-index: 0;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 8px;
+      transition: all 0.3s;
+    }
+
+    .step.active .step-number {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .step.completed .step-number {
+      background: #11998e;
+      color: white;
+    }
+
+    .step-label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .step.active .step-label {
+      color: #667eea;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="./index.html" class="back-link">← 返回员工管理</a>
+
+    <div class="header">
+      <h1>🎬 剪映小助手</h1>
+      <p>通过 JSON 文件快速创建剪映视频草稿</p>
+    </div>
+
+    <div class="steps">
+      <div class="step active" id="step1">
+        <div class="step-number">1</div>
+        <div class="step-label">输入 JSON</div>
+      </div>
+      <div class="step" id="step2">
+        <div class="step-number">2</div>
+        <div class="step-label">验证数据</div>
+      </div>
+      <div class="step" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-label">生成草稿</div>
+      </div>
+      <div class="step" id="step4">
+        <div class="step-number">4</div>
+        <div class="step-label">打开剪映</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 剪映草稿 JSON 数据</div>
+
+      <div class="input-group">
+        <label for="jsonInput">JSON 内容（draft_content.json 格式）</label>
+        <textarea id="jsonInput" placeholder="在此粘贴 JSON 数据，或使用下方模板生成..."></textarea>
+      </div>
+
+      <div class="template-section">
+        <div class="card-title" style="font-size: 14px;">📝 快速模板</div>
+        <div class="template-buttons">
+          <button class="template-btn" onclick="loadTemplate('basic')">基础视频模板</button>
+          <button class="template-btn" onclick="loadTemplate('image_sequence')">图片序列模板</button>
+          <button class="template-btn" onclick="loadTemplate('with_audio')">带音频模板</button>
+          <button class="template-btn" onclick="loadTemplate('with_subtitle')">带字幕模板</button>
+        </div>
+        <p class="help-text">
+          点击上方按钮快速加载预设模板，或手动输入 JSON 数据。
+          剪映草稿主要包含 <code>draft_content.json</code> 和 <code>draft_meta_info.json</code> 两个文件。
+        </p>
+      </div>
+
+      <div class="actions" style="margin-top: 20px;">
+        <button class="btn btn-primary" onclick="validateJSON()">
+          🔍 验证 JSON
+        </button>
+        <button class="btn btn-secondary" onclick="clearInput()">
+          🗑️ 清空
+        </button>
+        <button class="btn btn-success" onclick="generateDraft()">
+          ✨ 生成草稿并打开剪映
+        </button>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div id="preview" class="json-preview" style="display: none;">
+        <pre id="previewContent"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚙️ 草稿设置</div>
+
+      <div class="input-group">
+        <label for="draftName">草稿名称</label>
+        <input type="text" id="draftName" placeholder="我的剪映草稿" value="自动生成的草稿">
+      </div>
+
+      <div class="help-text">
+        💡 提示：生成草稿后，系统会自动尝试打开剪映客户端。如果无法自动打开，请手动打开剪映并在草稿列表中查找。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📖 使用说明</div>
+      <div class="help-text">
+        <ol style="padding-left: 20px; line-height: 2;">
+          <li>在上方文本框中输入或粘贴剪映草稿的 JSON 数据</li>
+          <li>点击"验证 JSON"检查数据格式是否正确</li>
+          <li>点击"生成草稿并打开剪映"创建草稿文件</li>
+          <li>系统会自动打开剪映客户端，你可以在草稿列表中找到生成的项目</li>
+          <li>在剪映中继续编辑或直接导出视频</li>
+        </ol>
+        <p style="margin-top: 12px;">
+          🔗 剪映官方下载：<a href="https://www.capcut.cn/" target="_blank">https://www.capcut.cn/</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 页面加载时检查 URL 参数，自动填充 JSON
+    window.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const jsonData = urlParams.get('json');
+      const draftName = urlParams.get('name');
+
+      if (jsonData) {
+        try {
+          const decoded = decodeURIComponent(jsonData);
+          document.getElementById('jsonInput').value = decoded;
+          showStatus('已从员工系统加载 JSON 数据', 'success');
+          updateStep(2);
+        } catch (e) {
+          console.error('解析 URL 参数失败:', e);
+        }
+      }
+
+      if (draftName) {
+        document.getElementById('draftName').value = decodeURIComponent(draftName);
+      }
+    });
+
+    // 模板数据
+    const templates = {
+      basic: {
+        canvas_config: {
+          height: 1920,
+          width: 1080,
+          ratio: "original"
+        },
+        fps: 30,
+        duration: 5000000,
+        materials: {
+          videos: [],
+          audios: [],
+          texts: []
+        },
+        tracks: []
+      },
+      image_sequence: {
+        canvas_config: {
+          height: 1920,
+          width: 1080,
+          ratio: "original"
+        },
+        fps: 30,
+        duration: 15000000,
+        materials: {
+          videos: [
+            {
+              id: "IMG_001",
+              type: "photo",
+              material_name: "image1.jpg",
+              path: "",
+              width: 1080,
+              height: 1920,
+              duration: 5000000
+            },
+            {
+              id: "IMG_002",
+              type: "photo",
+              material_name: "image2.jpg",
+              path: "",
+              width: 1080,
+              height: 1920,
+              duration: 5000000
+            }
+          ],
+          audios: [],
+          texts: []
+        },
+        tracks: [
+          {
+            id: "TRACK_001",
+            type: "video",
+            segments: [
+              {
+                id: "SEG_001",
+                material_id: "IMG_001",
+                source_timerange: { start: 0, duration: 5000000 },
+                target_timerange: { start: 0, duration: 5000000 }
+              },
+              {
+                id: "SEG_002",
+                material_id: "IMG_002",
+                source_timerange: { start: 0, duration: 5000000 },
+                target_timerange: { start: 5000000, duration: 5000000 }
+              }
+            ]
+          }
+        ]
+      },
+      with_audio: {
+        canvas_config: {
+          height: 1920,
+          width: 1080,
+          ratio: "original"
+        },
+        fps: 30,
+        duration: 10000000,
+        materials: {
+          videos: [
+            {
+              id: "VIDEO_001",
+              type: "photo",
+              material_name: "background.jpg",
+              path: "",
+              width: 1080,
+              height: 1920,
+              duration: 10000000
+            }
+          ],
+          audios: [
+            {
+              id: "AUDIO_001",
+              type: "extract_music",
+              name: "background.mp3",
+              path: "",
+              duration: 10000000
+            }
+          ],
+          texts: []
+        },
+        tracks: [
+          {
+            id: "TRACK_VIDEO",
+            type: "video",
+            segments: [
+              {
+                id: "SEG_VIDEO_001",
+                material_id: "VIDEO_001",
+                source_timerange: { start: 0, duration: 10000000 },
+                target_timerange: { start: 0, duration: 10000000 }
+              }
+            ]
+          },
+          {
+            id: "TRACK_AUDIO",
+            type: "audio",
+            segments: [
+              {
+                id: "SEG_AUDIO_001",
+                material_id: "AUDIO_001",
+                source_timerange: { start: 0, duration: 10000000 },
+                target_timerange: { start: 0, duration: 10000000 }
+              }
+            ]
+          }
+        ]
+      },
+      with_subtitle: {
+        canvas_config: {
+          height: 1920,
+          width: 1080,
+          ratio: "original"
+        },
+        fps: 30,
+        duration: 8000000,
+        materials: {
+          videos: [],
+          audios: [],
+          texts: [
+            {
+              id: "TEXT_001",
+              type: "text",
+              content: "这是第一段字幕",
+              font_size: 60,
+              duration: 4000000
+            },
+            {
+              id: "TEXT_002",
+              type: "text",
+              content: "这是第二段字幕",
+              font_size: 60,
+              duration: 4000000
+            }
+          ]
+        },
+        tracks: [
+          {
+            id: "TRACK_TEXT",
+            type: "text",
+            segments: [
+              {
+                id: "SEG_TEXT_001",
+                material_id: "TEXT_001",
+                source_timerange: { start: 0, duration: 4000000 },
+                target_timerange: { start: 0, duration: 4000000 }
+              },
+              {
+                id: "SEG_TEXT_002",
+                material_id: "TEXT_002",
+                source_timerange: { start: 0, duration: 4000000 },
+                target_timerange: { start: 4000000, duration: 4000000 }
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    function loadTemplate(type) {
+      const template = templates[type];
+      if (template) {
+        document.getElementById('jsonInput').value = JSON.stringify(template, null, 2);
+        showStatus(`已加载「${getTemplateName(type)}」`, 'success');
+        updateStep(1);
+      }
+    }
+
+    function getTemplateName(type) {
+      const names = {
+        basic: '基础视频模板',
+        image_sequence: '图片序列模板',
+        with_audio: '带音频模板',
+        with_subtitle: '带字幕模板'
+      };
+      return names[type] || type;
+    }
+
+    function validateJSON() {
+      const input = document.getElementById('jsonInput').value.trim();
+      if (!input) {
+        showStatus('请输入 JSON 数据', 'error');
+        return false;
+      }
+
+      try {
+        const data = JSON.parse(input);
+        showStatus('✅ JSON 格式验证通过！', 'success');
+
+        // 显示预览
+        document.getElementById('preview').style.display = 'block';
+        document.getElementById('previewContent').textContent = JSON.stringify(data, null, 2);
+
+        updateStep(2);
+        return true;
+      } catch (e) {
+        showStatus('❌ JSON 格式错误: ' + e.message, 'error');
+        return false;
+      }
+    }
+
+    function generateDraft() {
+      if (!validateJSON()) {
+        return;
+      }
+
+      const input = document.getElementById('jsonInput').value.trim();
+      const draftName = document.getElementById('draftName').value || '未命名草稿';
+
+      try {
+        const data = JSON.parse(input);
+
+        // 构建完整的草稿数据
+        const draftContent = {
+          ...data,
+          name: draftName,
+          id: generateUUID(),
+          create_time: Date.now(),
+          update_time: Date.now()
+        };
+
+        const draftMeta = {
+          draft_id: generateUUID(),
+          draft_name: draftName,
+          draft_cover: "draft_cover.jpg",
+          draft_materials: [
+            { type: 0, value: [] },
+            { type: 1, value: [] },
+            { type: 2, value: [] },
+            { type: 3, value: [] }
+          ],
+          tm_draft_create: Date.now(),
+          tm_draft_modified: Date.now(),
+          tm_duration: data.duration || 0
+        };
+
+        // 保存到本地存储
+        const draftData = {
+          content: draftContent,
+          meta: draftMeta,
+          name: draftName,
+          createdAt: new Date().toISOString()
+        };
+
+        // 保存到 localStorage
+        let drafts = JSON.parse(localStorage.getItem('jianying_drafts') || '[]');
+        drafts.push(draftData);
+        localStorage.setItem('jianying_drafts', JSON.stringify(drafts));
+
+        // 下载 JSON 文件
+        downloadJSON(draftContent, `${draftName}_draft_content.json`);
+        downloadJSON(draftMeta, `${draftName}_draft_meta_info.json`);
+
+        showStatus('✅ 草稿生成成功！JSON 文件已下载', 'success');
+        updateStep(3);
+
+        // 尝试打开剪映
+        setTimeout(() => {
+          openJianying();
+        }, 1000);
+
+      } catch (e) {
+        showStatus('❌ 生成草稿失败: ' + e.message, 'error');
+      }
+    }
+
+    function downloadJSON(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function openJianying() {
+      showStatus('🚀 正在尝试打开剪映客户端...', 'info');
+      updateStep(4);
+
+      // 尝试通过自定义协议打开剪映
+      // 剪映的自定义协议可能是 capcut:// 或 jianying://
+      const protocols = ['capcut://', 'jianying://', 'capcut-pro://'];
+
+      let protocolIndex = 0;
+      function tryNextProtocol() {
+        if (protocolIndex < protocols.length) {
+          const protocol = protocols[protocolIndex];
+          window.location.href = protocol;
+          protocolIndex++;
+
+          setTimeout(() => {
+            tryNextProtocol();
+          }, 500);
+        } else {
+          showStatus('⚠️ 无法自动打开剪映，请手动打开剪映客户端并导入生成的 JSON 文件', 'info');
+        }
+      }
+
+      tryNextProtocol();
+    }
+
+    function clearInput() {
+      document.getElementById('jsonInput').value = '';
+      document.getElementById('preview').style.display = 'none';
+      document.getElementById('status').style.display = 'none';
+      updateStep(1);
+    }
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
+    }
+
+    function updateStep(step) {
+      for (let i = 1; i <= 4; i++) {
+        const stepEl = document.getElementById('step' + i);
+        stepEl.classList.remove('active', 'completed');
+        if (i < step) {
+          stepEl.classList.add('completed');
+        } else if (i === step) {
+          stepEl.classList.add('active');
+        }
+      }
+    }
+
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16).toUpperCase();
+      });
+    }
+  </script>
+</body>
+</html>

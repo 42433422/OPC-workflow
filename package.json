@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "node-fetch": "^2.7.0"
+  },
+  "scripts": {
+    "test": "echo \"No tests defined yet\""
   }
 }
+

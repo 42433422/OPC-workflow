@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>客户信息收集 - 修茈科技视频定制</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+      color: #e6edf3;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* 左侧表单区域 */
+    .form-section {
+      flex: 1;
+      padding: 24px 32px;
+      overflow-y: auto;
+      background: rgba(13, 17, 23, 0.8);
+      border-right: 1px solid #30363d;
+    }
+
+    .form-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #58a6ff;
+    }
+
+    .form-header h1 {
+      font-size: 24px;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .form-header p {
+      color: #8b949e;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+      background: rgba(22, 27, 34, 0.6);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #30363d;
+    }
+
+    .form-group-title {
+      font-size: 16px;
+      color: #f0883e;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .form-row {
+      margin-bottom: 16px;
+    }
+
+    .form-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      color: #c9d1d9;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-label .required {
+      color: #f85149;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #58a6ff;
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(48, 54, 61, 0.5);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .checkbox-item:hover {
+      background: rgba(88, 166, 255, 0.2);
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #58a6ff;
+    }
+
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(48, 54, 61, 0.5);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .radio-item:hover {
+      background: rgba(88, 166, 255, 0.2);
+    }
+
+    .radio-item input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #58a6ff;
+    }
+
+    .highlight-field {
+      border-left: 3px solid #f0883e;
+      padding-left: 12px;
+      margin-left: -12px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #30363d;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2ea043 0%, #3fb950 100%);
+    }
+
+    .btn-secondary {
+      background: #30363d;
+      color: #c9d1d9;
+    }
+
+    .btn-secondary:hover {
+      background: #3d444d;
+    }
+
+    /* 右侧聊天区域 */
+    .chat-section {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(22, 27, 34, 0.95);
+      border-left: 1px solid #30363d;
+    }
+
+    .chat-header {
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f0883e 0%, #f6ad55 100%);
+      border-bottom: 1px solid #30363d;
+    }
+
+    .chat-header h2 {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+
+    .chat-header p {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 4px;
+      color: #fff;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      max-width: 90%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.ai {
+      align-self: flex-start;
+      background: rgba(240, 136, 62, 0.15);
+      border: 1px solid rgba(240, 136, 62, 0.3);
+      color: #c9d1d9;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+      color: white;
+    }
+
+    .message-time {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 6px;
+    }
+
+    .chat-input-area {
+      padding: 16px 20px;
+      border-top: 1px solid #30363d;
+      background: rgba(13, 17, 23, 0.8);
+    }
+
+    .chat-input-wrapper {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 20px;
+      color: #e6edf3;
+      font-size: 14px;
+      resize: none;
+      min-height: 44px;
+      max-height: 120px;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: #f0883e;
+    }
+
+    .chat-send-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f0883e 0%, #f6ad55 100%);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .chat-send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(240, 136, 62, 0.4);
+    }
+
+    .chat-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+    }
+
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #f0883e;
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-10px); }
+    }
+
+    /* 滚动条样式 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3d444d;
+    }
+
+    /* 字段提示 */
+    .field-hint {
+      font-size: 12px;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    /* 当前正在填写的字段高亮 */
+    .form-row.filling {
+      background: rgba(240, 136, 62, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin: -12px;
+      border: 1px solid rgba(240, 136, 62, 0.3);
+    }
+
+    /* 已填写的字段标记 */
+    .form-row.filled .form-label::after {
+      content: '✓';
+      color: #2ea043;
+      margin-left: 8px;
+      font-weight: bold;
+    }
+
+    /* 响应式 */
+    @media (max-width: 1200px) {
+      .chat-section {
+        width: 360px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        flex-direction: column;
+      }
+      .chat-section {
+        width: 100%;
+        height: 400px;
+        border-left: none;
+        border-top: 1px solid #30363d;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 左侧表单区域 -->
+    <div class="form-section">
+      <div class="form-header">
+        <h1><i class="ph ph-clipboard-text"></i> 修茈科技 · 视频定制菜单</h1>
+        <p>小刘会帮您填写，您只需要在右侧回答他的问题即可</p>
+      </div>
+
+      <form id="customer-form">
+        <!-- 基本信息 -->
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-info"></i> 基本信息</div>
+          
+          <div class="form-row" data-field="brand-name">
+            <label class="form-label">
+              <i class="ph ph-tag"></i> 品牌名 <span class="required">*</span>
+            </label>
+            <input type="text" class="form-input" id="brand-name" placeholder="请输入品牌名称" required>
+          </div>
+
+          <div class="form-row" data-field="address">
+            <label class="form-label">
+              <i class="ph ph-map-pin"></i> 地址
+            </label>
+            <input type="text" class="form-input" id="address" placeholder="请输入地址">
+          </div>
+
+          <div class="form-row" data-field="account-info">
+            <label class="form-label">
+              <i class="ph ph-video"></i> 视频账号基本信息
+            </label>
+            <textarea class="form-textarea" id="account-info" placeholder="请描述您的视频账号现状，如：粉丝数、内容类型、运营时间等"></textarea>
+          </div>
+        </div>
+
+        <!-- 用户的行业和定位 -->
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-target"></i> 用户的行业和定位</div>
+          
+          <div class="form-row" data-field="industry">
+            <label class="form-label">
+              <i class="ph ph-buildings"></i> 行业信息 <span class="required">*</span>
+            </label>
+            <input type="text" class="form-input" id="industry" placeholder="例如：餐饮、教育、美妆、科技等" required>
+          </div>
+
+          <div class="form-row" data-field="scale-plan">
+            <label class="form-label">
+              <i class="ph ph-chart-line-up"></i> 规模大小及未来打算
+            </label>
+            <textarea class="form-textarea" id="scale-plan" placeholder="请描述您的企业规模和发展规划"></textarea>
+          </div>
+
+          <div class="form-row highlight-field" data-field="user-requirements">
+            <label class="form-label">
+              <i class="ph ph-star"></i> 用户要求 <span class="required">*</span>
+            </label>
+            <textarea class="form-textarea" id="user-requirements" placeholder="请详细描述您对视频的具体要求和期望" required></textarea>
+            <p class="field-hint">这是最重要的信息，请尽可能详细描述</p>
+          </div>
+
+          <div class="form-row" data-field="term">
+            <label class="form-label">
+              <i class="ph ph-calendar"></i> 长期/短期
+            </label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="term" value="长期" checked>
+                <span>长期合作</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="term" value="短期">
+                <span>短期项目</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="term" value="未定">
+                <span>暂未确定</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 视频用途 -->
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-film-strip"></i> 视频用途（可多选）</div>
+          
+          <div class="checkbox-group" data-field="video-purpose">
+            <label class="checkbox-item">
+              <input type="checkbox" name="video-purpose" value="品牌宣传推广">
+              <span>品牌宣传推广</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="video-purpose" value="产品/服务推销">
+              <span>产品/服务推销</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="video-purpose" value="个人IP打造">
+              <span>个人IP打造</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="video-purpose" value="活动预告">
+              <span>活动预告</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="video-purpose" value="知识科普分享">
+              <span>知识科普分享</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 视频预期时长 -->
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-clock"></i> 视频预期时长</div>
+          
+          <div class="radio-group" data-field="duration">
+            <label class="radio-item">
+              <input type="radio" name="duration" value="9-14秒">
+              <span>9-14秒</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="duration" value="16-22秒">
+              <span>16-22秒</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="duration" value="23-38秒">
+              <span>23-38秒</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="duration" value="38-46秒">
+              <span>38-46秒</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="duration" value="48-56秒">
+              <span>48-56秒</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="duration" value="1分钟以上">
+              <span>1分钟以上</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 视频创作的创新度/热点度 -->
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-lightning"></i> 视频创作的创新度/热点度</div>
+          
+          <div class="radio-group" data-field="innovation">
+            <label class="radio-item">
+              <input type="radio" name="innovation" value="同行成功案例复刻（稳）">
+              <span>同行成功案例复刻（稳）</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="innovation" value="同行成功案例复刻（热）">
+              <span>同行成功案例复刻（热）</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="innovation" value="定制化（稳）">
+              <span>定制化（稳）</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="innovation" value="定制化（热）">
+              <span>定制化（热）</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 用户人群/画像 -->
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-users"></i> 用户人群/画像</div>
+          
+          <div class="form-row" data-field="target-audience">
+            <label class="form-label">
+              <i class="ph ph-user-focus"></i> 服务人群主要特征
+            </label>
+            <input type="text" class="form-input" id="target-audience" placeholder="例如：25-35岁女性、一线城市白领等">
+          </div>
+
+          <div class="form-row" data-field="user-persona">
+            <label class="form-label">
+              <i class="ph ph-chart-pie"></i> 账号用户画像
+            </label>
+            <textarea class="form-textarea" id="user-persona" placeholder="请描述您的目标用户画像"></textarea>
+          </div>
+        </div>
+
+        <!-- 视频的需求和运营计划 -->
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-strategy"></i> 视频的需求和运营计划</div>
+          
+          <div class="form-row" data-field="budget">
+            <label class="form-label">
+              <i class="ph ph-currency-circle-dollar"></i> 视频投入成本接受程度
+            </label>
+            <select class="form-select" id="budget">
+              <option value="">请选择预算范围</option>
+              <option value="5000以下">5000元以下</option>
+              <option value="5000-10000">5000-10000元</option>
+              <option value="10000-30000">10000-30000元</option>
+              <option value="30000-50000">30000-50000元</option>
+              <option value="50000以上">50000元以上</option>
+              <option value="需商议">需商议</option>
+            </select>
+          </div>
+
+          <div class="form-row" data-field="operation">
+            <label class="form-label">
+              <i class="ph ph-gear"></i> 运营方案
+            </label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="operation" value="自己运营">
+                <span>自己运营</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="operation" value="修茈科技提供">
+                <span>修茈科技提供</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="operation" value="共同运营">
+                <span>共同运营</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row highlight-field" data-field="highlights">
+            <label class="form-label">
+              <i class="ph ph-fire"></i> 特色亮点以及话题爆点
+            </label>
+            <textarea class="form-textarea" id="highlights" placeholder="请描述您希望突出的特色和可能的话题爆点"></textarea>
+          </div>
+
+          <div class="form-row" data-field="platform-style">
+            <label class="form-label">
+              <i class="ph ph-device-mobile"></i> 平台以及视频风格
+            </label>
+            <input type="text" class="form-input" id="platform-style" placeholder="例如：抖音-搞笑风格、小红书-种草风格等">
+          </div>
+
+          <div class="form-row" data-field="other">
+            <label class="form-label">
+              <i class="ph ph-notebook"></i> 其他
+            </label>
+            <textarea class="form-textarea" id="other" placeholder="其他需要补充的信息"></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="ph ph-check-circle"></i> 提交信息
+          </button>
+          <button type="button" class="btn btn-secondary" id="save-draft">
+            <i class="ph ph-floppy-disk"></i> 保存草稿
+          </button>
+          <button type="button" class="btn btn-secondary" id="reset-form">
+            <i class="ph ph-arrow-counter-clockwise"></i> 重置
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 右侧聊天区域 -->
+    <div class="chat-section">
+      <div class="chat-header">
+        <h2><i class="ph ph-user-circle"></i> 小刘 - 您的专属顾问</h2>
+        <p>我会引导您完成表单填写，请直接回答我的问题</p>
+        <div id="ai-model-badge" style="margin-top: 8px; font-size: 11px; opacity: 0.8; display: flex; align-items: center; gap: 6px;">
+          <i class="ph ph-robot"></i>
+          <span id="ai-model-name">正在加载AI配置...</span>
+        </div>
+        <div style="margin-top: 4px; font-size: 10px; opacity: 0.6; color: #f0883e;">
+          <i class="ph ph-sparkle"></i> 使用客户对接模块 · 抖音代运营提示词
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <!-- 消息会动态添加到这里 -->
+      </div>
+
+      <div class="chat-input-area">
+        <!-- 语音控制按钮 -->
+        <div class="voice-controls" style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center;">
+          <button class="voice-btn" id="voice-toggle" onclick="toggleVoice()" title="开启/关闭语音播报">
+            <i class="ph ph-speaker-high"></i>
+            <span>语音播报：开</span>
+          </button>
+          <button class="voice-btn" id="voice-input-btn" onclick="toggleVoiceInput()" title="语音输入">
+            <i class="ph ph-microphone"></i>
+            <span>语音输入</span>
+          </button>
+          <span id="voice-status" style="font-size: 12px; color: #8b949e; margin-left: auto;"></span>
+        </div>
+        <div class="chat-input-wrapper">
+          <textarea class="chat-input" id="chat-input" placeholder="输入您的回答..." rows="1"></textarea>
+          <button class="chat-send-btn" id="send-btn" onclick="sendMessage()">
+            <i class="ph ph-paper-plane-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* 语音按钮样式 */
+    .voice-btn {
+      padding: 6px 12px;
+      background: rgba(240, 136, 62, 0.1);
+      border: 1px solid rgba(240, 136, 62, 0.3);
+      border-radius: 16px;
+      color: #f0883e;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .voice-btn:hover {
+      background: rgba(240, 136, 62, 0.2);
+    }
+    .voice-btn.active {
+      background: rgba(240, 136, 62, 0.3);
+      border-color: #f0883e;
+    }
+    .voice-btn.recording {
+      background: rgba(248, 81, 73, 0.2);
+      border-color: #f85149;
+      color: #f85149;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .voice-btn.recording i {
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+
+  <script>
+    // ==================== 小刘语音系统 ====================
+    
+    // 语音播报功能：改为调用后端 TTS（GPT-SoVITS），而不是浏览器自带 TTS
+    let voiceEnabled = true;
+    let currentAudio = null;
+    
+    // 语音识别功能 (Web Speech API - ASR)
+    let recognition = null;
+    let isRecording = false;
+    
+    // 初始化语音识别
+    function initSpeechRecognition() {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN'; // 中文识别
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        recognition.onstart = function() {
+          isRecording = true;
+          updateVoiceInputUI();
+          document.getElementById('voice-status').textContent = '正在聆听...';
+        };
+        
+        recognition.onend = function() {
+          isRecording = false;
+          updateVoiceInputUI();
+          document.getElementById('voice-status').textContent = '';
+        };
+        
+        recognition.onresult = function(event) {
+          const transcript = event.results[0][0].transcript;
+          chatInput.value = transcript;
+          chatInput.style.height = 'auto';
+          chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+          // 自动发送
+          setTimeout(() => {
+            sendMessage();
+          }, 500);
+        };
+        
+        recognition.onerror = function(event) {
+          console.error('语音识别错误:', event.error);
+          document.getElementById('voice-status').textContent = '识别失败，请重试';
+          isRecording = false;
+          updateVoiceInputUI();
+        };
+        
+        return true;
+      } else {
+        console.log('浏览器不支持语音识别');
+        document.getElementById('voice-status').textContent = '您的浏览器不支持语音输入';
+        return false;
+      }
+    }
+    
+    // 切换语音播报
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      const btn = document.getElementById('voice-toggle');
+      const icon = btn.querySelector('i');
+      const text = btn.querySelector('span');
+      
+      if (voiceEnabled) {
+        btn.classList.add('active');
+        icon.className = 'ph ph-speaker-high';
+        text.textContent = '语音播报：开';
+        // 测试语音
+        speak('语音播报已开启');
+      } else {
+        btn.classList.remove('active');
+        icon.className = 'ph ph-speaker-slash';
+        text.textContent = '语音播报：关';
+        // 停止当前播放
+        if (currentAudio) {
+          try {
+            currentAudio.pause();
+          } catch (e) {}
+          currentAudio = null;
+        }
+      }
+    }
+    
+    // 切换语音输入
+    function toggleVoiceInput() {
+      if (!recognition) {
+        if (!initSpeechRecognition()) {
+          alert('您的浏览器不支持语音输入功能，请使用 Chrome 或 Edge 浏览器');
+          return;
+        }
+      }
+      
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.error('启动语音识别失败:', e);
+        }
+      }
+    }
+    
+    // 更新语音输入按钮状态
+    function updateVoiceInputUI() {
+      const btn = document.getElementById('voice-input-btn');
+      const icon = btn.querySelector('i');
+      const text = btn.querySelector('span');
+      
+      if (isRecording) {
+        btn.classList.add('recording');
+        icon.className = 'ph ph-stop-circle';
+        text.textContent = '停止录音';
+      } else {
+        btn.classList.remove('recording');
+        icon.className = 'ph ph-microphone';
+        text.textContent = '语音输入';
+      }
+    }
+    
+    // 语音播报函数：调用后端 /api/tts，使用 GPT-SoVITS 生成语音
+    async function speak(text) {
+      if (!voiceEnabled) return;
+      if (!text || !text.trim()) return;
+
+      // 停止之前的音频
+      if (currentAudio) {
+        try {
+          currentAudio.pause();
+        } catch (e) {}
+        currentAudio = null;
+      }
+
+      try {
+        const resp = await fetch('http://localhost:8080/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: text,
+            lang: 'zh'
+          })
+        });
+
+        const result = await resp.json();
+        if (!resp.ok || result.success === false) {
+          console.error('TTS 请求失败:', result && result.error && result.error.message ? result.error.message : resp.status);
+          return;
+        }
+
+        const data = result.data || {};
+        if (!data.audioBase64) {
+          console.error('TTS 返回缺少 audioBase64 字段');
+          return;
+        }
+
+        const audio = new Audio(data.audioBase64);
+        currentAudio = audio;
+        audio.play().catch((e) => {
+          console.error('播放 TTS 音频失败:', e);
+        });
+      } catch (e) {
+        console.error('调用 TTS 接口出错:', e);
+      }
+    }
+    
+    // 页面加载时初始化语音
+    window.addEventListener('load', function() {
+      // 预加载语音列表
+      if (speechSynthesis) {
+        // Chrome 需要等待 voiceschanged 事件
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+          speechSynthesis.onvoiceschanged = function() {
+            speechSynthesis.getVoices();
+          };
+        }
+        speechSynthesis.getVoices();
+      }
+      // 初始化语音识别
+      initSpeechRecognition();
+      // 设置语音按钮初始状态
+      document.getElementById('voice-toggle').classList.add('active');
+    });
+    
+    // ==================== 小刘AI对话系统 ====================
+    
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    
+    // 客户对接模块节点ID
+    const CLIENT_MODULE_NODE_ID = 'douyin-client';
+    
+    // 获取客户对接模块的AI配置
+    function getAIConfig() {
+      // 首先尝试获取客户对接模块专属的AI配置
+      let orgNodeModels = {};
+      let apiConfigs = {};
+      
+      try {
+        const storedNodeModels = localStorage.getItem('orgNodeModels');
+        orgNodeModels = storedNodeModels ? JSON.parse(storedNodeModels) : {};
+        
+        const storedApiConfigs = localStorage.getItem('aiApiConfigs');
+        apiConfigs = storedApiConfigs ? JSON.parse(storedApiConfigs) : {};
+      } catch (e) {
+        console.log('获取AI配置失败:', e);
+      }
+      
+      // 检查客户对接模块是否有专属配置
+      const clientModuleConfig = orgNodeModels[CLIENT_MODULE_NODE_ID];
+      
+      if (clientModuleConfig && clientModuleConfig.provider && clientModuleConfig.model) {
+        // 使用客户对接模块专属的AI配置
+        return {
+          provider: clientModuleConfig.provider,
+          model: clientModuleConfig.model,
+          apiKey: apiConfigs[clientModuleConfig.provider] || '',
+          isModuleSpecific: true
+        };
+      }
+      
+      // 如果没有专属配置，使用全局默认配置
+      let selectedModel = localStorage.getItem('selectedModel') || 'qwen-max';
+      let provider = 'qwen';
+      let model = selectedModel;
+      
+      if (selectedModel && selectedModel.includes(':')) {
+        [provider, model] = selectedModel.split(':');
+      }
+      
+      return {
+        provider,
+        model,
+        apiKey: apiConfigs[provider] || '',
+        isModuleSpecific: false
+      };
+    }
+    
+    // 显示当前AI配置
+    function displayAIModelInfo() {
+      const config = getAIConfig();
+      const modelNameEl = document.getElementById('ai-model-name');
+      
+      if (modelNameEl) {
+        if (config.isModuleSpecific) {
+          modelNameEl.textContent = `客户对接模块专用: ${config.provider} · ${config.model}`;
+          modelNameEl.style.color = '#f0883e';
+        } else {
+          modelNameEl.textContent = `使用全局配置: ${config.provider} · ${config.model}`;
+          modelNameEl.style.color = '#8b949e';
+        }
+      }
+    }
+    
+    // 调用AI模型生成回复
+    async function callAI(messages) {
+      const config = getAIConfig();
+      
+      try {
+        const response = await fetch('http://localhost:8080/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            provider: config.provider,
+            model: config.model,
+            messages: messages,
+            apiKey: config.apiKey,
+            source: 'customer-form'
+          })
+        });
+        
+        const result = await response.json();
+        if (!response.ok || result.success === false) {
+          const msg = result && result.error && result.error.message ? result.error.message : 'AI请求失败';
+          throw new Error(msg);
+        }
+        
+        const data = result.data || {};
+        return data.content || data.message || '抱歉，我没有理解，请再说一遍。';
+      } catch (error) {
+        console.error('AI调用失败:', error);
+        return null;
+      }
+    }
+    
+    // 构建系统提示词 - 使用客户对接模块的抖音代运营提示词
+    function buildSystemPrompt() {
+      return `你现在扮演一名「抖音代运营 · 1人全能负责人」小刘，为客户提供从需求对接到内容复盘的全流程服务，请严格按照下面的职责思考和回复：
+
+【整体定位】
+- 根据客户行业、账号定位、投放预算和服务周期，给出适配的抖音运营策略与执行方案。
+- 既能做客户沟通，又能独立完成内容策划、拍摄脚本、剪辑包装和数据复盘。
+
+【当前任务 - 客户对接模块】
+你的首要任务是引导客户填写视频定制需求表单，收集以下信息：
+1. 品牌名称
+2. 所在行业
+3. 视频制作目的和需求（品牌曝光/线索获取/直播成交等）
+4. 视频用途（品牌宣传、产品推销、个人IP、活动预告、知识科普）
+5. 视频时长偏好（9-14秒/16-22秒/23-38秒/38-46秒/48-56秒/1分钟以上）
+6. 目标客户群体画像
+7. 预算范围（5000以下/5000-10000/10000-30000/30000-50000/50000以上/需商议）
+8. 发布平台（抖音/小红书/B站等）和视频风格偏好
+9. 运营方案（自己运营/修茈科技提供/共同运营）
+10. 产品/服务特色亮点和话题爆点
+
+【对话要求】
+- 语气亲切、专业、有耐心，像一位经验丰富的顾问
+- 每次只问1-2个问题，等待客户回答后再继续
+- 根据客户的行业特点给出针对性的建议
+- 如果客户回答不够清晰，友善地追问
+- 适当解释为什么需要这些信息
+- 保持对话流畅自然，不要机械地逐个提问
+
+【回答风格】
+- 用「确认收到 → 简要回应 → 自然过渡 → 下一个问题」的结构
+- 尽量给出具体的例子帮助客户理解
+- 适时给予专业建议，展示你的专业性`;
+    }
+    
+    // 对话历史
+    let conversationHistory = [
+      { role: 'system', content: buildSystemPrompt() }
+    ];
+    
+    // 定义需要收集的字段信息（用于表单自动填充）
+    const fieldMappings = {
+      'brand-name': { name: '品牌名称', type: 'text' },
+      'industry': { name: '行业', type: 'text' },
+      'user-requirements': { name: '视频需求', type: 'text' },
+      'video-purpose': { name: '视频用途', type: 'checkbox', options: ['品牌宣传推广', '产品/服务推销', '个人IP打造', '活动预告', '知识科普分享'] },
+      'duration': { name: '视频时长', type: 'radio', options: ['9-14秒', '16-22秒', '23-38秒', '38-46秒', '48-56秒', '1分钟以上'] },
+      'target-audience': { name: '目标客户', type: 'text' },
+      'budget': { name: '预算范围', type: 'select', options: ['5000以下', '5000-10000', '10000-30000', '30000-50000', '50000以上', '需商议'] },
+      'platform-style': { name: '平台和风格', type: 'text' },
+      'operation': { name: '运营方案', type: 'radio', options: ['自己运营', '修茈科技提供', '共同运营'] },
+      'highlights': { name: '特色亮点', type: 'text' }
+    };
+    
+    // 当前正在收集的字段
+    let currentField = null;
+    let isCollecting = false;
+    
+    // 初始化 - 小刘主动打招呼并开始提问（使用AI）
+    async function initXiaoLiu() {
+      // 添加用户消息到历史
+      conversationHistory.push({
+        role: 'user',
+        content: '请开始对话，向客户打招呼并询问品牌名称。'
+      });
+      
+      // 显示正在输入
+      showTypingIndicator();
+      
+      // 调用AI生成回复
+      const aiResponse = await callAI(conversationHistory);
+      
+      hideTypingIndicator();
+      
+      if (aiResponse) {
+        // 添加AI回复到历史
+        conversationHistory.push({
+          role: 'assistant',
+          content: aiResponse
+        });
+        
+        // 显示消息
+        addMessage(aiResponse, 'ai');
+        
+        // 尝试从AI回复中提取信息并填充表单
+        extractAndFillForm(aiResponse);
+      } else {
+        // AI调用失败，使用默认问候
+        const defaultGreeting = '您好！我是小刘，修茈科技视频定制的客户顾问 😊\n\n很高兴为您服务！请问您的品牌名称是什么？';
+        addMessage(defaultGreeting, 'ai');
+        conversationHistory.push({
+          role: 'assistant',
+          content: defaultGreeting
+        });
+      }
+    }
+    
+    // 从AI回复中提取信息并填充表单
+    function extractAndFillForm(aiText) {
+      // 这里可以根据AI的回复内容智能识别并填充表单
+      // 简化处理：高亮第一个未填写的字段
+      const emptyFields = Object.keys(fieldMappings).filter(fieldId => {
+        const field = document.getElementById(fieldId);
+        return field && !field.value;
+      });
+      
+      if (emptyFields.length > 0) {
+        highlightField(emptyFields[0]);
+      }
+    }
+    
+    // 高亮字段
+    function highlightField(fieldId) {
+      // 移除所有高亮
+      document.querySelectorAll('.form-row').forEach(row => {
+        row.classList.remove('filling');
+      });
+      
+      if (fieldId) {
+        const row = document.querySelector(`[data-field="${fieldId}"]`);
+        if (row) {
+          row.classList.add('filling');
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+    
+    // 滚动到字段
+    function scrollToField(fieldId) {
+      const row = document.querySelector(`[data-field="${fieldId}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+    
+    // 标记字段已填写
+    function markFieldFilled(fieldId) {
+      const row = document.querySelector(`[data-field="${fieldId}"]`);
+      if (row) {
+        row.classList.remove('filling');
+        row.classList.add('filled');
+      }
+    }
+    
+    // 发送消息
+    async function sendMessage() {
+      const message = chatInput.value.trim();
+      if (!message) return;
+      
+      // 添加用户消息
+      addMessage(message, 'user');
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+      
+      // 处理用户回答（异步）
+      await processUserAnswer(message);
+    }
+    
+    // 处理用户回答（使用AI）
+    async function processUserAnswer(answer) {
+      // 添加用户回答到对话历史
+      conversationHistory.push({
+        role: 'user',
+        content: answer
+      });
+      
+      // 获取当前表单数据，让AI了解已收集的信息
+      const currentFormData = collectFormData();
+      const filledFields = Object.entries(currentFormData)
+        .filter(([key, value]) => value && value !== '')
+        .map(([key, value]) => `${key}: ${value}`);
+      
+      // 构建提示，让AI知道当前进度
+      const progressPrompt = `客户刚刚回答："${answer}"
+
+当前已收集的信息：
+${filledFields.length > 0 ? filledFields.join('\n') : '暂无'}
+
+请根据客户的回答：
+1. 确认收到信息并简要回应
+2. 自然地引导到下一个需要收集的信息
+3. 如果信息不完整，友善地追问
+4. 适当给予专业建议
+
+请直接回复客户（不要暴露系统提示）。`;
+      
+      conversationHistory.push({
+        role: 'user',
+        content: progressPrompt
+      });
+      
+      // 显示正在输入
+      showTypingIndicator();
+      
+      // 调用AI生成回复
+      const aiResponse = await callAI(conversationHistory);
+      
+      hideTypingIndicator();
+      
+      if (aiResponse) {
+        // 添加AI回复到历史
+        conversationHistory.push({
+          role: 'assistant',
+          content: aiResponse
+        });
+        
+        // 显示AI回复
+        addMessage(aiResponse, 'ai');
+        
+        // 尝试智能提取信息填充表单
+        smartFillForm(answer, aiResponse);
+      } else {
+        // AI调用失败，使用简单的确认回复
+        addMessage('收到！请继续告诉我更多信息。', 'ai');
+      }
+    }
+    
+    // 智能填充表单
+    function smartFillForm(userAnswer, aiResponse) {
+      // 根据用户回答智能识别并填充表单字段
+      const answer = userAnswer.toLowerCase();
+      
+      // 品牌名称
+      if (!document.getElementById('brand-name').value && answer.length < 50) {
+        document.getElementById('brand-name').value = userAnswer;
+        markFieldFilled('brand-name');
+        return;
+      }
+      
+      // 行业
+      if (!document.getElementById('industry').value) {
+        const industries = ['餐饮', '教育', '美妆', '科技', '电商', '服装', '旅游', '医疗', '金融', '房地产', '汽车', '娱乐'];
+        const found = industries.find(ind => answer.includes(ind));
+        if (found) {
+          document.getElementById('industry').value = found;
+          markFieldFilled('industry');
+          return;
+        }
+      }
+      
+      // 视频需求
+      if (!document.getElementById('user-requirements').value && userAnswer.length > 10) {
+        document.getElementById('user-requirements').value = userAnswer;
+        markFieldFilled('user-requirements');
+        return;
+      }
+      
+      // 目标客户
+      if (!document.getElementById('target-audience').value) {
+        document.getElementById('target-audience').value = userAnswer;
+        markFieldFilled('target-audience');
+        return;
+      }
+      
+      // 预算
+      if (!document.getElementById('budget').value) {
+        const budgetOptions = ['5000以下', '5000-10000', '10000-30000', '30000-50000', '50000以上', '需商议'];
+        const found = budgetOptions.find(opt => answer.includes(opt.replace('元', '').replace('以下', '').replace('以上', '')));
+        if (found) {
+          document.getElementById('budget').value = found;
+          markFieldFilled('budget');
+          return;
+        }
+      }
+      
+      // 平台和风格
+      if (!document.getElementById('platform-style').value) {
+        document.getElementById('platform-style').value = userAnswer;
+        markFieldFilled('platform-style');
+        return;
+      }
+      
+      // 特色亮点
+      if (!document.getElementById('highlights').value) {
+        document.getElementById('highlights').value = userAnswer;
+        markFieldFilled('highlights');
+        return;
+      }
+      
+      // 高亮下一个空字段
+      const emptyFields = Object.keys(fieldMappings).filter(fieldId => {
+        const field = document.getElementById(fieldId);
+        return field && !field.value;
+      });
+      
+      if (emptyFields.length > 0) {
+        highlightField(emptyFields[0]);
+      }
+    }
+    
+    // 填写文本字段
+    function fillTextField(fieldId, value) {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        field.value = value;
+        return true;
+      }
+      return false;
+    }
+    
+    // 填写单选字段
+    function fillRadioField(fieldName, answer, options) {
+      // 尝试直接匹配选项
+      let matchedOption = options.find(opt => answer.includes(opt));
+      
+      // 如果没匹配到，尝试数字匹配
+      if (!matchedOption) {
+        const numbers = answer.match(/\d+/g);
+        if (numbers && numbers.length > 0) {
+          const index = parseInt(numbers[0]) - 1;
+          if (index >= 0 && index < options.length) {
+            matchedOption = options[index];
+          }
+        }
+      }
+      
+      if (matchedOption) {
+        const radio = document.querySelector(`input[name="${fieldName}"][value="${matchedOption}"]`);
+        if (radio) {
+          radio.checked = true;
+          return true;
+        }
+      }
+      
+      return false;
+    }
+    
+    // 填写多选字段
+    function fillCheckboxField(fieldName, answer, options) {
+      const numbers = answer.match(/\d+/g);
+      if (numbers && numbers.length > 0) {
+        numbers.forEach(num => {
+          const index = parseInt(num) - 1;
+          if (index >= 0 && index < options.length) {
+            const checkbox = document.querySelector(`input[name="${fieldName}"][value="${options[index]}"]`);
+            if (checkbox) {
+              checkbox.checked = true;
+            }
+          }
+        });
+        return true;
+      }
+      
+      // 尝试直接匹配选项文本
+      options.forEach(opt => {
+        if (answer.includes(opt)) {
+          const checkbox = document.querySelector(`input[name="${fieldName}"][value="${opt}"]`);
+          if (checkbox) {
+            checkbox.checked = true;
+          }
+        }
+      });
+      
+      return true;
+    }
+    
+    // 填写下拉字段
+    function fillSelectField(fieldId, answer, options) {
+      const field = document.getElementById(fieldId);
+      if (!field) return false;
+      
+      // 尝试直接匹配
+      let matched = options.find(opt => answer.includes(opt));
+      
+      if (matched) {
+        field.value = matched;
+        return true;
+      }
+      
+      return false;
+    }
+    
+    // 添加消息到聊天区
+    function addMessage(content, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      messageDiv.innerHTML = `
+        <div style="white-space: pre-line;">${content}</div>
+        <div class="message-time">${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
+      `;
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      // 如果是AI消息，进行语音播报
+      if (type === 'ai') {
+        // 去除emoji和特殊符号，保留纯文本用于语音播报
+        const plainText = content
+          .replace(/[😊🎉✅👍💡]/g, '')
+          .replace(/\n/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        speak(plainText);
+      }
+    }
+    
+    // 显示正在输入
+    function showTypingIndicator() {
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'message ai typing';
+      typingDiv.id = 'typing-indicator';
+      typingDiv.innerHTML = `
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      `;
+      chatMessages.appendChild(typingDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // 隐藏正在输入
+    function hideTypingIndicator() {
+      const typingIndicator = document.getElementById('typing-indicator');
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+    }
+    
+    // 自动调整输入框高度
+    chatInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    
+    // 回车发送
+    chatInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    
+    // ==================== 表单功能 ====================
+    
+    // 表单提交
+    document.getElementById('customer-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = collectFormData();
+      console.log('表单数据：', formData);
+      
+      // 提交到后端API
+      try {
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> 提交中...';
+        
+        const response = await fetch('/api/customers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        if (response.ok && result && result.success !== false) {
+          console.log('提交成功:', result);
+          
+          // 显示成功消息
+          addMessage('🎉 信息提交成功！\n\n感谢您的配合，我们的团队会尽快审核您的需求并与您联系。如果有紧急问题，可以随时找我！', 'ai');
+          
+          // 清空草稿
+          localStorage.removeItem('customerFormDraft');
+          
+          alert('信息已提交！我们会尽快与您联系。');
+          
+          // 可选：提交后跳转到成功页面或清空表单
+          // document.getElementById('customer-form').reset();
+        } else {
+          const msg = result && result.error && result.error.message ? result.error.message : '提交失败';
+          throw new Error(msg);
+        }
+      } catch (error) {
+        console.error('提交失败:', error);
+        addMessage('❌ 提交失败，请稍后重试或联系客服。错误：' + error.message, 'ai');
+        alert('提交失败，请稍后重试');
+      } finally {
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="ph ph-paper-plane-right"></i> 提交信息';
+      }
+    });
+    
+    // 收集表单数据
+    function collectFormData() {
+      const data = {
+        brandName: document.getElementById('brand-name').value,
+        address: document.getElementById('address').value,
+        accountInfo: document.getElementById('account-info').value,
+        industry: document.getElementById('industry').value,
+        scalePlan: document.getElementById('scale-plan').value,
+        userRequirements: document.getElementById('user-requirements').value,
+        term: document.querySelector('input[name="term"]:checked')?.value,
+        videoPurpose: Array.from(document.querySelectorAll('input[name="video-purpose"]:checked')).map(cb => cb.value),
+        duration: document.querySelector('input[name="duration"]:checked')?.value,
+        innovation: document.querySelector('input[name="innovation"]:checked')?.value,
+        targetAudience: document.getElementById('target-audience').value,
+        userPersona: document.getElementById('user-persona').value,
+        budget: document.getElementById('budget').value,
+        operation: document.querySelector('input[name="operation"]:checked')?.value,
+        highlights: document.getElementById('highlights').value,
+        platformStyle: document.getElementById('platform-style').value,
+        other: document.getElementById('other').value
+      };
+      return data;
+    }
+    
+    // 保存草稿
+    document.getElementById('save-draft').addEventListener('click', function() {
+      const data = collectFormData();
+      localStorage.setItem('customerFormDraft', JSON.stringify(data));
+      addMessage('✅ 草稿已保存到本地', 'ai');
+    });
+    
+    // 重置表单
+    document.getElementById('reset-form').addEventListener('click', function() {
+      if (confirm('确定要重置表单吗？已填写的数据将清空。')) {
+        document.getElementById('customer-form').reset();
+        document.querySelectorAll('.form-row').forEach(row => {
+          row.classList.remove('filled', 'filling');
+        });
+        currentQuestionIndex = 0;
+        addMessage('表单已重置，我们重新开始吧！😊', 'ai');
+        setTimeout(() => {
+          askQuestion(0);
+        }, 1000);
+      }
+    });
+    
+    // 加载草稿
+    function loadDraft() {
+      const draft = localStorage.getItem('customerFormDraft');
+      if (draft) {
+        const data = JSON.parse(draft);
+        // 恢复数据到表单
+        if (data.brandName) document.getElementById('brand-name').value = data.brandName;
+        if (data.address) document.getElementById('address').value = data.address;
+        if (data.accountInfo) document.getElementById('account-info').value = data.accountInfo;
+        if (data.industry) document.getElementById('industry').value = data.industry;
+        if (data.scalePlan) document.getElementById('scale-plan').value = data.scalePlan;
+        if (data.userRequirements) document.getElementById('user-requirements').value = data.userRequirements;
+        if (data.targetAudience) document.getElementById('target-audience').value = data.targetAudience;
+        if (data.userPersona) document.getElementById('user-persona').value = data.userPersona;
+        if (data.budget) document.getElementById('budget').value = data.budget;
+        if (data.highlights) document.getElementById('highlights').value = data.highlights;
+        if (data.platformStyle) document.getElementById('platform-style').value = data.platformStyle;
+        if (data.other) document.getElementById('other').value = data.other;
+        
+        // 恢复单选按钮
+        if (data.term) {
+          const termRadio = document.querySelector(`input[name="term"][value="${data.term}"]`);
+          if (termRadio) termRadio.checked = true;
+        }
+        if (data.duration) {
+          const durationRadio = document.querySelector(`input[name="duration"][value="${data.duration}"]`);
+          if (durationRadio) durationRadio.checked = true;
+        }
+        if (data.innovation) {
+          const innovationRadio = document.querySelector(`input[name="innovation"][value="${data.innovation}"]`);
+          if (innovationRadio) innovationRadio.checked = true;
+        }
+        if (data.operation) {
+          const operationRadio = document.querySelector(`input[name="operation"][value="${data.operation}"]`);
+          if (operationRadio) operationRadio.checked = true;
+        }
+        
+        // 恢复复选框
+        if (data.videoPurpose) {
+          data.videoPurpose.forEach(value => {
+            const checkbox = document.querySelector(`input[name="video-purpose"][value="${value}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
+        }
+        
+        // 标记已填写的字段
+        document.querySelectorAll('.form-row').forEach(row => {
+          const fieldId = row.dataset.field;
+          if (fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field && field.value) {
+              row.classList.add('filled');
+            }
+          }
+        });
+        
+        addMessage('检测到您有未完成的草稿，已帮您恢复。我们继续吧！😊', 'ai');
+        
+        // 找到第一个未填写的字段继续提问
+        for (let i = 0; i < questions.length; i++) {
+          const field = document.getElementById(questions[i].field);
+          if (!field || !field.value) {
+            currentQuestionIndex = i - 1;
+            setTimeout(() => {
+              askQuestion(i);
+            }, 1500);
+            return;
+          }
+        }
+        
+        // 如果都填写了
+        currentQuestionIndex = questions.length;
+        setTimeout(() => {
+          addMessage('看起来您已经填写完所有信息了！请检查一下左侧表单，确认无误后就可以提交啦~ 🎉', 'ai');
+        }, 1500);
+      } else {
+        // 没有草稿时，根据是否有AI配置决定是否自动开始对话
+        if (hasAIConfig()) {
+          initXiaoLiu();
+        } else {
+          addMessage('🤖 您好！我是小刘，修茈科技的客户顾问。\n\n请先在组织架构中为客户对接模块接入AI模型，然后我们就可以开始收集客户信息啦！', 'ai');
+        }
+      }
+    }
+
+    // 检查是否有可用的 AI 配置
+    function hasAIConfig() {
+      const config = getAIConfig();
+      return config.provider && config.model;
+    }
+    
+    // 页面加载时
+    window.addEventListener('load', function() {
+      // 显示当前AI配置
+      displayAIModelInfo();
+      // 加载草稿或开始新对话
+      loadDraft();
+    });
+  </script>
+</body>
+</html>

@@ -408,6 +408,7 @@
           <option value="project">项目</option>
           <option value="assistant">小碟助手</option>
           <option value="global-assistant">顶部 AI 助手</option>
+          <option value="form">表单</option>
         </select>
       </div>
     </div>
@@ -512,6 +513,11 @@
         <tr><td colspan="7" class="loading">加载中...</td></tr>
       </tbody>
     </table>
+    <div id="detail-pagination" style="margin-top:8px; display:flex; justify-content:flex-end; align-items:center; gap:8px; font-size:12px; color:#9ca3af;">
+      <button id="detail-prev" class="btn btn-secondary" style="padding:4px 10px;font-size:11px;">上一页</button>
+      <span id="detail-page-info">第 1 / 1 页</span>
+      <button id="detail-next" class="btn btn-secondary" style="padding:4px 10px;font-size:11px;">下一页</button>
+    </div>
   </div>
 
   <script>
@@ -548,7 +554,8 @@
       return allRecords.filter(rec => {
         if (days && !inDateRange(rec.time, days)) return false;
         if (providerVal && rec.provider !== providerVal) return false;
-        const srcType = rec.source?.type || 'unknown';
+        const src = rec.source;
+        const srcType = typeof src === 'string' ? 'form' : (src?.type || 'unknown');
         if (sourceTypeVal && srcType !== sourceTypeVal) return false;
         return true;
       });
@@ -621,9 +628,14 @@
 
       const sourceArr = [];
       Object.values(sourceAgg).forEach(stat => {
+        let displayLabel = stat.label;
+        if (stat.type === 'form') {
+          if (stat.label === 'customer-form') displayLabel = '客户需求表单';
+          else if (stat.label === 'contract-form') displayLabel = '合同拟定表单';
+        }
         sourceArr.push({
           type: stat.type,
-          label: stat.label,
+          label: displayLabel,
           cost: stat.total_cost || 0
         });
       });
@@ -634,7 +646,7 @@
       } else {
         sourceList.innerHTML = topSources.map(item => `
           <li class="topn-item">
-            <span class="topn-item-label">${item.label} (${item.type})</span>
+            <span class="topn-item-label">${item.label}</span>
             <span class="topn-item-value">${item.cost.toFixed(2)} 元</span>
           </li>
         `).join('');
@@ -729,6 +741,54 @@
       box.innerHTML = `<ul>${insights.map(t => `<li>${t}</li>`).join('')}</ul>`;
     }
 
+    // 详细记录分页配置（前端分页，避免一次性渲染过多行）
+    const DETAIL_PAGE_SIZE = 100;
+    let detailRecordsCache = [];
+    let detailCurrentPage = 1;
+
+    function renderDetailTablePage(page) {
+      const tbody = document.getElementById('detail-tbody');
+      const info = document.getElementById('detail-page-info');
+      const prevBtn = document.getElementById('detail-prev');
+      const nextBtn = document.getElementById('detail-next');
+      if (!tbody || !info || !prevBtn || !nextBtn) return;
+
+      const total = detailRecordsCache.length;
+      if (!total) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">暂无数据</td></tr>';
+        info.textContent = '第 1 / 1 页';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(total / DETAIL_PAGE_SIZE));
+      let current = Math.min(Math.max(1, page), totalPages);
+      detailCurrentPage = current;
+
+      const start = (current - 1) * DETAIL_PAGE_SIZE;
+      const end = Math.min(start + DETAIL_PAGE_SIZE, total);
+      const pageRecords = detailRecordsCache.slice(start, end);
+
+      const rows = pageRecords.map(rec => {
+        return `
+          <tr>
+            <td>${rec.time}</td>
+            <td>${rec.provider}</td>
+            <td>${rec.model}</td>
+            <td>${rec.prompt}</td>
+            <td>${rec.completion}</td>
+            <td>${rec.total}</td>
+            <td>${rec.source}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = rows.join('');
+      info.textContent = `第 ${current} / ${totalPages} 页（共 ${total} 条）`;
+      prevBtn.disabled = current <= 1;
+      nextBtn.disabled = current >= totalPages;
+    }
+
     async function loadData() {
       try {
         document.getElementById('provider-tbody').innerHTML = '<tr><td colspan="6" class="loading">加载中...</td></tr>';
@@ -737,8 +797,12 @@
 
         // 先拉取原始调用记录
         const rawResp = await fetch(`${API_BASE}/api/usage-records`);
-        if (!rawResp.ok) throw new Error(`加载失败（${rawResp.status}）`);
-        allRecords = await rawResp.json();
+        const result = await rawResp.json();
+        if (!rawResp.ok || result.success === false) {
+          const msg = result && result.error && result.error.message ? result.error.message : `加载失败（${rawResp.status}）`;
+          throw new Error(msg);
+        }
+        allRecords = Array.isArray(result.data) ? result.data : [];
 
         // 初始化提供商筛选选项
         rebuildProviderFilterOptions(allRecords);
@@ -778,19 +842,21 @@
           providerAgg[prov][model].total_tokens += total;
 
           const src = rec.source || {};
-          const srcType = src.type || 'unknown';
+          const srcType = typeof src === 'string' ? 'form' : (src.type || 'unknown');
           const srcLabel =
-            srcType === 'employee'
-              ? (src.employeeName || `员工#${src.employeeId || '-'}`)
-              : srcType === 'department'
-                ? (src.deptName || '某部门')
-                : srcType === 'project'
-                  ? (src.projectName || '某项目')
-                  : srcType === 'assistant'
-                    ? '小碟助手'
-                    : srcType === 'global-assistant'
-                      ? '顶部 AI 助手'
-                      : '未标注来源';
+            typeof src === 'string'
+              ? src
+              : srcType === 'employee'
+                ? (src.employeeName || `员工#${src.employeeId || '-'}`)
+                : srcType === 'department'
+                  ? (src.deptName || '某部门')
+                  : srcType === 'project'
+                    ? (src.projectName || '某项目')
+                    : srcType === 'assistant'
+                      ? '小碟助手'
+                      : srcType === 'global-assistant'
+                        ? '顶部 AI 助手'
+                        : '未标注来源';
           const key = `${srcType}:${srcLabel}`;
           if (!sourceAgg[key]) {
             sourceAgg[key] = {
@@ -848,10 +914,17 @@
 
         const sourceRows = [];
         Object.values(sourceAgg).forEach(stat => {
+          let displayLabel = stat.label;
+          let displayType = stat.type;
+          if (stat.type === 'form') {
+            displayType = '表单';
+            if (stat.label === 'customer-form') displayLabel = '客户需求表单';
+            else if (stat.label === 'contract-form') displayLabel = '合同拟定表单';
+          }
           sourceRows.push(`
             <tr>
-              <td>${stat.type}</td>
-              <td>${stat.label}</td>
+              <td>${displayType}</td>
+              <td>${displayLabel}</td>
               <td>${stat.prompt_tokens || 0}</td>
               <td>${stat.completion_tokens || 0}</td>
               <td>${stat.total_tokens || 0}</td>
@@ -867,27 +940,31 @@
         document.getElementById('provider-tbody').innerHTML = providerRows.length ? providerRows.join('') : '<tr><td colspan="6" class="empty">暂无数据</td></tr>';
         document.getElementById('source-tbody').innerHTML = sourceRows.length ? sourceRows.join('') : '<tr><td colspan="6" class="empty">暂无数据</td></tr>';
 
-        // 明细表
-        const detailRows = records.map(rec => {
-          const srcType = rec.source?.type || 'unknown';
-          const srcLabel = srcType === 'employee' ? rec.source?.employeeName :
-                         srcType === 'department' ? rec.source?.deptName :
-                         srcType === 'project' ? rec.source?.projectName :
+        // 明细表：先整理为结构化缓存，再按页渲染，避免一次性渲染过多行
+        detailRecordsCache = records.map(rec => {
+          const src = rec.source;
+          const srcType = typeof src === 'string' ? 'form' : (src?.type || 'unknown');
+          let srcLabel = typeof src === 'string' ? src :
+                         srcType === 'employee' ? src?.employeeName :
+                         srcType === 'department' ? src?.deptName :
+                         srcType === 'project' ? src?.projectName :
                          srcType === 'assistant' ? '小碟助手' :
                          srcType === 'global-assistant' ? '顶部 AI 助手' : '未知';
-          return `
-            <tr>
-              <td>${rec.time ? new Date(rec.time).toLocaleString('zh-CN') : '-'}</td>
-              <td>${rec.provider}</td>
-              <td>${rec.model}</td>
-              <td>${rec.usage?.prompt_tokens || 0}</td>
-              <td>${rec.usage?.completion_tokens || 0}</td>
-              <td>${rec.usage?.total_tokens || 0}</td>
-              <td>${srcLabel}</td>
-            </tr>
-          `;
+          if (srcType === 'form') {
+            if (srcLabel === 'customer-form') srcLabel = '客户需求表单';
+            else if (srcLabel === 'contract-form') srcLabel = '合同拟定表单';
+          }
+          return {
+            time: rec.time ? new Date(rec.time).toLocaleString('zh-CN') : '-',
+            provider: rec.provider,
+            model: rec.model,
+            prompt: rec.usage?.prompt_tokens || 0,
+            completion: rec.usage?.completion_tokens || 0,
+            total: rec.usage?.total_tokens || 0,
+            source: srcLabel
+          };
         });
-        document.getElementById('detail-tbody').innerHTML = detailRows.length ? detailRows.join('') : '<tr><td colspan="7" class="empty">暂无数据</td></tr>';
+        renderDetailTablePage(1);
 
         // 趋势图 / TopN / 预算对比 / 洞察
         renderTrendChart(dateAggCost);
@@ -911,6 +988,14 @@
     document.getElementById('date-range').addEventListener('change', loadData);
     document.getElementById('provider-filter').addEventListener('change', loadData);
     document.getElementById('source-type-filter').addEventListener('change', loadData);
+
+    // 绑定分页按钮事件
+    document.getElementById('detail-prev').addEventListener('click', () => {
+      renderDetailTablePage(detailCurrentPage - 1);
+    });
+    document.getElementById('detail-next').addEventListener('click', () => {
+      renderDetailTablePage(detailCurrentPage + 1);
+    });
 
     loadData();
   </script>

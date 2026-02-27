@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>语言模型工程师工作台 - 声音模型管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top left, #0b1120 0, #020617 45%, #000 100%);
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-primary);
+    }
+    .ve-container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+      box-sizing: border-box;
+    }
+    .ve-header {
+      margin-bottom: 20px;
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%),
+                  radial-gradient(circle at top right, rgba(94, 234, 212, 0.16), transparent 55%),
+                  rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.8);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .ve-header-title h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ve-header-title p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .ve-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      font-size: 11px;
+    }
+    .ve-main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.4fr);
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .ve-card {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 14px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+      padding: 14px 16px 16px;
+    }
+    .ve-card h2 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ve-card p {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .ve-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .ve-table th,
+    .ve-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      text-align: left;
+    }
+    .ve-table th {
+      background: rgba(15, 23, 42, 0.98);
+      color: #e5e7eb;
+      font-weight: 600;
+    }
+    .ve-table td {
+      color: #f3f4f6;
+    }
+    .ve-table tr:hover td {
+      background: rgba(31, 41, 55, 0.9);
+    }
+    .ve-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+    }
+    .ve-status-pill.ready {
+      background: rgba(22, 163, 74, 0.15);
+      border: 1px solid rgba(22, 163, 74, 0.8);
+      color: #bbf7d0;
+    }
+    .ve-status-pill.pending {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.8);
+      color: #fed7aa;
+    }
+    .ve-status-pill.error {
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid rgba(248, 113, 113, 0.8);
+      color: #fecaca;
+    }
+    .ve-small-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ve-select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.98);
+      color: #e5e7eb;
+      font-size: 13px;
+    }
+    .ve-row {
+      margin-bottom: 10px;
+    }
+    .ve-helper {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 3px;
+    }
+    .ve-pill-assistant {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148, 163, 184, 0.6);
+      font-size: 11px;
+      color: #e5e7eb;
+    }
+    .ve-link-back {
+      font-size: 12px;
+      color: #93c5fd;
+      text-decoration: none;
+    }
+    .ve-link-back:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="ve-container">
+    <header class="ve-header">
+      <div class="ve-header-title">
+        <h1>🧠 语言模型工程师工作台</h1>
+        <p>集中管理公司内部的声音模型，并为小碟 / 小刘等助手绑定合适的声线。</p>
+      </div>
+      <div>
+        <span class="ve-tag">🎙 声音模型中心</span>
+        <a href="./index.html" class="ve-link-back">← 返回组织架构视图</a>
+      </div>
+    </header>
+
+    <main class="ve-main-grid">
+      <section class="ve-card">
+        <h2>🎧 声音模型列表</h2>
+        <p>下表展示了当前已通过「一键克隆」上传并登记的说话人，可用于 TTS / 助手播报。</p>
+        <div id="ve-voices-empty" class="ve-helper" style="display:none;">暂时还没有声音模型，请在员工 AI 菜单中上传语音进行克隆。</div>
+        <table class="ve-table" id="ve-voices-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>说话人</th>
+              <th>语言</th>
+              <th>状态</th>
+              <th>模式</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="ve-voices-tbody"></tbody>
+        </table>
+      </section>
+
+      <section class="ve-card">
+        <h2>🤖 助手声音绑定</h2>
+        <p>为关键助手绑定具体声线，后续助手在说话 / 播报时即可使用对应的人声模型。</p>
+
+        <div class="ve-row">
+          <div class="ve-small-label">
+            <span class="ve-pill-assistant">🦋 小碟助手</span>
+            <span>— 侧边栏知识 / 组织架构的小助手</span>
+          </div>
+          <select id="ve-assistant-xiaodie" class="ve-select">
+            <option value="">（使用默认声线）</option>
+          </select>
+          <div class="ve-helper">建议为小碟选择一位语速适中、语气亲和的女声或中性音。</div>
+        </div>
+
+        <div class="ve-row">
+          <div class="ve-small-label">
+            <span class="ve-pill-assistant">👔 小刘（财务）</span>
+            <span>— 财务工作台 / 报表播报助手</span>
+          </div>
+          <select id="ve-assistant-xiaoliu" class="ve-select">
+            <option value="">（使用默认声线）</option>
+          </select>
+          <div class="ve-helper">建议为小刘选择偏专业、稳重的声线，用于读报表 / 解释数字。</div>
+        </div>
+
+        <button id="ve-save-assistants" class="ai-menu-btn" style="margin-top:8px;">💾 保存助手声音配置</button>
+        <p class="ve-helper" id="ve-save-status" style="margin-top:6px;"></p>
+
+        <hr style="border-color: rgba(31,41,55,0.9); margin:14px 0;" />
+
+        <h2 style="font-size:15px; margin-bottom:6px;">⚡ 一键克隆新声音</h2>
+        <p class="ve-helper" style="margin-bottom:8px;">
+          在这里直接上传干净人声，系统会在后台自动执行切分 / ASR 标注，并登记为新的声音模型。
+        </p>
+
+        <div class="ve-row">
+          <div class="ve-small-label">说话人名称</div>
+          <input id="ve-clone-name" type="text" placeholder="例如：抖音运营负责人女声" class="ve-select" style="background:#020617;" />
+        </div>
+
+        <div class="ve-row">
+          <div class="ve-small-label">语言</div>
+          <select id="ve-clone-lang" class="ve-select">
+            <option value="zh">中文（zh）</option>
+            <option value="en">英文（en）</option>
+            <option value="ja">日文（ja）</option>
+            <option value="auto">自动识别（auto）</option>
+          </select>
+        </div>
+
+        <div class="ve-row">
+          <div class="ve-small-label">上传语音文件（支持多段，尽量为干净人声）</div>
+          <input id="ve-clone-files" type="file" accept="audio/*" multiple style="width:100%; font-size:12px;" />
+          <div class="ve-helper">可一次上传多段语音，总时长建议 30 秒 ~ 2 分钟。</div>
+        </div>
+
+        <button id="ve-clone-btn" class="ai-menu-btn" style="margin-top:6px;">⚡ 上传并一键克隆</button>
+        <p class="ve-helper" id="ve-clone-status" style="margin-top:6px;"></p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080';
+
+    async function loadVoices() {
+      try {
+        const resp = await fetch(API_BASE + '/api/voices');
+        const result = await resp.json();
+        if (!resp.ok || result.success === false) {
+          const msg = result && result.error && result.error.message ? result.error.message : resp.status;
+          throw new Error('请求失败 ' + msg + '（请确认后端 Node 服务已重启并包含 /api/voices 接口）');
+        }
+        const voices = Array.isArray(result.data) ? result.data : [];
+
+        const tbody = document.getElementById('ve-voices-tbody');
+        const table = document.getElementById('ve-voices-table');
+        const empty = document.getElementById('ve-voices-empty');
+        const selXiaodie = document.getElementById('ve-assistant-xiaodie');
+        const selXiaoliu = document.getElementById('ve-assistant-xiaoliu');
+
+        if (!Array.isArray(voices) || voices.length === 0) {
+          empty.style.display = 'block';
+          table.style.display = 'none';
+          return;
+        }
+
+        empty.style.display = 'none';
+        table.style.display = 'table';
+
+        tbody.innerHTML = '';
+        // 缓存一份完整的 voices 列表，方便其他页面/逻辑使用
+        window.voicesCache = voices;
+
+        voices.forEach((v) => {
+          const tr = document.createElement('tr');
+          const tdName = document.createElement('td');
+          const tdLang = document.createElement('td');
+          const tdStatus = document.createElement('td');
+          const tdMode = document.createElement('td');
+          const tdNote = document.createElement('td');
+
+          tdName.textContent = v.displayName || v.speakerId;
+          tdLang.textContent = (v.lang || '').toUpperCase() || '-';
+
+          const statusSpan = document.createElement('span');
+          const status = v.status || 'ready';
+          statusSpan.className = 've-status-pill ' + (status === 'ready' ? 'ready' : status === 'pending' ? 'pending' : 'error');
+          statusSpan.textContent = status === 'ready' ? '可用' : status === 'pending' ? '处理中' : '异常';
+          tdStatus.appendChild(statusSpan);
+
+          tdMode.textContent = v.mode || 'zero-shot';
+          tdNote.textContent = v.listPath ? '已生成标注 · ' + v.listPath : '—';
+
+          tr.appendChild(tdName);
+          tr.appendChild(tdLang);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdMode);
+          tr.appendChild(tdNote);
+          tbody.appendChild(tr);
+
+          // 同步到助手下拉框
+          const opt1 = document.createElement('option');
+          opt1.value = v.speakerId;
+          opt1.textContent = v.displayName || v.speakerId;
+          selXiaodie.appendChild(opt1);
+
+          const opt2 = document.createElement('option');
+          opt2.value = v.speakerId;
+          opt2.textContent = v.displayName || v.speakerId;
+          selXiaoliu.appendChild(opt2);
+        });
+
+        // 读取本地已保存的助手声音绑定
+        let assistantVoices = {};
+        try {
+          const raw = localStorage.getItem('assistantVoices');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') assistantVoices = parsed;
+          }
+        } catch (e) {
+          assistantVoices = {};
+        }
+
+        if (assistantVoices.xiaodie && [...selXiaodie.options].some(o => o.value === assistantVoices.xiaodie)) {
+          selXiaodie.value = assistantVoices.xiaodie;
+        }
+        if (assistantVoices.xiaoliu && [...selXiaoliu.options].some(o => o.value === assistantVoices.xiaoliu)) {
+          selXiaoliu.value = assistantVoices.xiaoliu;
+        }
+
+        // 暴露到全局，方便其他页面读取
+        window.assistantVoices = assistantVoices;
+      } catch (e) {
+        console.error('加载声音模型失败:', e);
+        const empty = document.getElementById('ve-voices-empty');
+        empty.style.display = 'block';
+        empty.textContent = '加载声音模型失败：' + e.message;
+      }
+    }
+
+    function bindSaveAssistants() {
+      const btn = document.getElementById('ve-save-assistants');
+      const out = document.getElementById('ve-save-status');
+      const selXiaodie = document.getElementById('ve-assistant-xiaodie');
+      const selXiaoliu = document.getElementById('ve-assistant-xiaoliu');
+
+      btn.addEventListener('click', () => {
+        const voices = Array.isArray(window.voicesCache) ? window.voicesCache : [];
+        const findVoiceLang = (speakerId) => {
+          if (!speakerId) return '';
+          const v = voices.find(vo => vo.speakerId === speakerId);
+          return v && v.lang ? String(v.lang).toLowerCase() : '';
+        };
+
+        const xiaodieId = selXiaodie.value || '';
+        const xiaoliuId = selXiaoliu.value || '';
+
+        const config = {
+          xiaodie: xiaodieId,
+          xiaoliu: xiaoliuId,
+          xiaodieLang: findVoiceLang(xiaodieId),
+          xiaoliuLang: findVoiceLang(xiaoliuId)
+        };
+        localStorage.setItem('assistantVoices', JSON.stringify(config));
+        window.assistantVoices = config;
+        out.textContent = '已保存助手声音配置。小碟 / 小刘 后续说话时可读取对应声线。';
+        out.style.color = '#4ade80';
+        setTimeout(() => {
+          out.textContent = '';
+        }, 3000);
+      });
+    }
+
+    async function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function bindCloneForm() {
+      const btn = document.getElementById('ve-clone-btn');
+      const out = document.getElementById('ve-clone-status');
+      const nameInput = document.getElementById('ve-clone-name');
+      const langSelect = document.getElementById('ve-clone-lang');
+      const filesInput = document.getElementById('ve-clone-files');
+
+      btn.addEventListener('click', async () => {
+        const displayName = (nameInput.value || '').trim();
+        const lang = (langSelect.value || 'zh').trim();
+        const files = Array.from(filesInput.files || []);
+
+        if (!displayName) {
+          out.textContent = '请先填写说话人名称。';
+          out.style.color = '#f97373';
+          return;
+        }
+        if (files.length === 0) {
+          out.textContent = '请至少选择一段语音文件。';
+          out.style.color = '#f97373';
+          return;
+        }
+
+        out.textContent = '正在上传并触发后台处理，请稍候...';
+        out.style.color = '#e5e7eb';
+
+        try {
+          const encodedFiles = [];
+          for (const f of files) {
+            const dataUrl = await toBase64(f);
+            encodedFiles.push({
+              filename: f.name,
+              dataBase64: dataUrl
+            });
+          }
+
+          // 生成一个相对稳定的 speakerId：基于名称 + 时间戳
+          const baseId = displayName.replace(/[^a-zA-Z0-9_\-]/g, '_') || 'voice';
+          const speakerId = baseId.toLowerCase() + '_' + Date.now();
+
+          const resp = await fetch(API_BASE + '/api/voice-dataset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              speakerId,
+              displayName,
+              lang,
+              ownerType: 'custom',
+              ownerId: null,
+              files: encodedFiles
+            })
+          });
+
+          const result = await resp.json();
+          if (!resp.ok || result.success === false) {
+            const msg = result && result.error && result.error.message ? result.error.message : ('后端返回错误：' + resp.status);
+            throw new Error(msg);
+          }
+
+          const data = result.data || {};
+          out.textContent = `已上传语音并触发后台处理：${data.displayName}（${data.speakerId}）。请稍后刷新查看列表状态。`;
+          out.style.color = '#4ade80';
+
+          // 简单刷新一次声音列表（不会阻塞）
+          loadVoices();
+        } catch (e) {
+          console.error('一键克隆失败:', e);
+          out.textContent = '一键克隆失败：' + e.message;
+          out.style.color = '#f97373';
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadVoices();
+      bindSaveAssistants();
+      bindCloneForm();
+    });
+  </script>
+</body>
+</html>
+
+

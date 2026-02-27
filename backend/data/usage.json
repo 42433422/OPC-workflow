@@ -83,6 +83,340 @@
         "completion_tokens": 73,
         "total_tokens": 183
       }
+    },
+    {
+      "time": "2026-02-26T10:45:03.682Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 247,
+        "completion_tokens": 22,
+        "total_tokens": 269
+      }
+    },
+    {
+      "time": "2026-02-26T10:45:30.423Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 243,
+        "completion_tokens": 18,
+        "total_tokens": 261
+      }
+    },
+    {
+      "time": "2026-02-26T10:45:46.191Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 243,
+        "completion_tokens": 167,
+        "total_tokens": 410
+      }
+    },
+    {
+      "time": "2026-02-26T10:47:10.615Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 242,
+        "completion_tokens": 36,
+        "total_tokens": 278
+      }
+    },
+    {
+      "time": "2026-02-26T10:47:23.043Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 246,
+        "completion_tokens": 44,
+        "total_tokens": 290
+      }
+    },
+    {
+      "time": "2026-02-26T11:06:27.637Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "customer-form",
+      "usage": {
+        "prompt_tokens": 496,
+        "completion_tokens": 126,
+        "total_tokens": 622
+      }
+    },
+    {
+      "time": "2026-02-26T11:07:20.869Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "customer-form",
+      "usage": {
+        "prompt_tokens": 756,
+        "completion_tokens": 169,
+        "total_tokens": 925
+      }
+    },
+    {
+      "time": "2026-02-26T14:21:28.808Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "contract-form",
+      "usage": {
+        "prompt_tokens": 328,
+        "completion_tokens": 60,
+        "total_tokens": 388
+      }
+    },
+    {
+      "time": "2026-02-26T14:22:31.932Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "contract-form",
+      "usage": {
+        "prompt_tokens": 328,
+        "completion_tokens": 52,
+        "total_tokens": 380
+      }
+    },
+    {
+      "time": "2026-02-26T14:26:21.301Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "contract-form",
+      "usage": {
+        "prompt_tokens": 328,
+        "completion_tokens": 53,
+        "total_tokens": 381
+      }
+    },
+    {
+      "time": "2026-02-26T14:26:41.338Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "contract-form",
+      "usage": {
+        "prompt_tokens": 485,
+        "completion_tokens": 57,
+        "total_tokens": 542
+      }
+    },
+    {
+      "time": "2026-02-26T14:31:10.527Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "contract-form",
+      "usage": {
+        "prompt_tokens": 331,
+        "completion_tokens": 50,
+        "total_tokens": 381
+      }
+    },
+    {
+      "time": "2026-02-26T14:31:55.173Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "contract-form",
+      "usage": {
+        "prompt_tokens": 331,
+        "completion_tokens": 62,
+        "total_tokens": 393
+      }
+    },
+    {
+      "time": "2026-02-26T14:35:43.372Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 273,
+        "completion_tokens": 39,
+        "total_tokens": 312
+      }
+    },
+    {
+      "time": "2026-02-26T14:35:56.190Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 274,
+        "completion_tokens": 33,
+        "total_tokens": 307
+      }
+    },
+    {
+      "time": "2026-02-26T14:38:41.459Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 274,
+        "completion_tokens": 37,
+        "total_tokens": 311
+      }
+    },
+    {
+      "time": "2026-02-26T14:38:51.297Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 274,
+        "completion_tokens": 40,
+        "total_tokens": 314
+      }
+    },
+    {
+      "time": "2026-02-26T14:48:16.571Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "contract-form",
+      "usage": {
+        "prompt_tokens": 331,
+        "completion_tokens": 52,
+        "total_tokens": 383
+      }
+    },
+    {
+      "time": "2026-02-26T14:52:11.008Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 271,
+        "completion_tokens": 46,
+        "total_tokens": 317
+      }
+    },
+    {
+      "time": "2026-02-26T14:52:24.016Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 281,
+        "completion_tokens": 31,
+        "total_tokens": 312
+      }
+    },
+    {
+      "time": "2026-02-26T14:53:39.618Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 272,
+        "completion_tokens": 31,
+        "total_tokens": 303
+      }
+    },
+    {
+      "time": "2026-02-26T14:53:49.671Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 274,
+        "completion_tokens": 25,
+        "total_tokens": 299
+      }
+    },
+    {
+      "time": "2026-02-26T15:01:18.739Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 278,
+        "completion_tokens": 31,
+        "total_tokens": 309
+      }
+    },
+    {
+      "time": "2026-02-26T15:02:56.974Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 274,
+        "completion_tokens": 27,
+        "total_tokens": 301
+      }
+    },
+    {
+      "time": "2026-02-26T15:06:45.123Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": "customer-form",
+      "usage": {
+        "prompt_tokens": 506,
+        "completion_tokens": 162,
+        "total_tokens": 668
+      }
+    },
+    {
+      "time": "2026-02-26T15:24:39.914Z",
+      "provider": "deepseek",
+      "model": "deepseek-coder",
+      "source": {
+        "type": "assistant",
+        "label": "disc-assistant"
+      },
+      "usage": {
+        "prompt_tokens": 275,
+        "completion_tokens": 22,
+        "total_tokens": 297
+      }
     }
   ]
 }

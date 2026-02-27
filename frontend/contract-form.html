@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>合同拟定 - 修茈科技视频定制</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+      color: #e6edf3;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    .form-section {
+      flex: 1;
+      padding: 24px 32px;
+      overflow-y: auto;
+      background: rgba(13, 17, 23, 0.8);
+      border-right: 1px solid #30363d;
+    }
+
+    .form-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #58a6ff;
+    }
+
+    .form-header h1 {
+      font-size: 24px;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .form-header p {
+      color: #8b949e;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+      background: rgba(22, 27, 34, 0.6);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #30363d;
+    }
+
+    .form-group-title {
+      font-size: 16px;
+      color: #f0883e;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .form-row {
+      margin-bottom: 16px;
+    }
+
+    .form-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      color: #c9d1d9;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-label .required {
+      color: #f85149;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #58a6ff;
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(48, 54, 61, 0.5);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .checkbox-item:hover {
+      background: rgba(88, 166, 255, 0.2);
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #58a6ff;
+    }
+
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(48, 54, 61, 0.5);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .radio-item:hover {
+      background: rgba(88, 166, 255, 0.2);
+    }
+
+    .radio-item input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #58a6ff;
+    }
+
+    .highlight-field {
+      border-left: 3px solid #f0883e;
+      padding-left: 12px;
+      margin-left: -12px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #30363d;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2ea043 0%, #3fb950 100%);
+    }
+
+    .btn-secondary {
+      background: #30363d;
+      color: #c9d1d9;
+    }
+
+    .btn-secondary:hover {
+      background: #3d444d;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #da3633 0%, #f85149 100%);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #f85149 0%, #ff7b72 100%);
+    }
+
+    .chat-section {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(22, 27, 34, 0.95);
+      border-left: 1px solid #30363d;
+    }
+
+    .chat-header {
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 100%);
+      border-bottom: 1px solid #30363d;
+    }
+
+    .chat-header h2 {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+
+    .chat-header p {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 4px;
+      color: #fff;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      max-width: 90%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.ai {
+      align-self: flex-start;
+      background: rgba(88, 166, 255, 0.15);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      color: #c9d1d9;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+      color: white;
+    }
+
+    .message-time {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 6px;
+    }
+
+    .chat-input-area {
+      padding: 16px 20px;
+      border-top: 1px solid #30363d;
+      background: rgba(13, 17, 23, 0.8);
+    }
+
+    .chat-input-wrapper {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 20px;
+      color: #e6edf3;
+      font-size: 14px;
+      resize: none;
+      min-height: 44px;
+      max-height: 120px;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    .chat-send-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 100%);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .chat-send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(88, 166, 255, 0.4);
+    }
+
+    .chat-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+    }
+
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #58a6ff;
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-10px); }
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3d444d;
+    }
+
+    .field-hint {
+      font-size: 12px;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    .form-row.filling {
+      background: rgba(88, 166, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin: -12px;
+      border: 1px solid rgba(88, 166, 255, 0.3);
+    }
+
+    .form-row.filled .form-label::after {
+      content: '✓';
+      color: #2ea043;
+      margin-left: 8px;
+      font-weight: bold;
+    }
+
+    .contract-preview {
+      background: #fff;
+      color: #333;
+      padding: 24px;
+      border-radius: 8px;
+      font-family: 'Times New Roman', serif;
+      font-size: 14px;
+      line-height: 1.8;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .contract-preview h2 {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+
+    .contract-preview h3 {
+      font-size: 15px;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    .contract-preview p {
+      margin-bottom: 8px;
+      text-indent: 2em;
+    }
+
+    .contract-preview .signature {
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .contract-preview .signature div {
+      text-align: center;
+      width: 45%;
+    }
+
+    .contract-preview .signature .line {
+      border-top: 1px solid #333;
+      margin-top: 40px;
+      padding-top: 5px;
+    }
+
+    .preview-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: rgba(22, 27, 34, 0.6);
+      border-radius: 12px;
+      border: 1px solid #30363d;
+    }
+
+    .preview-section h3 {
+      font-size: 16px;
+      color: #58a6ff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (max-width: 1200px) {
+      .chat-section {
+        width: 360px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        flex-direction: column;
+      }
+      .chat-section {
+        width: 100%;
+        height: 400px;
+        border-left: none;
+        border-top: 1px solid #30363d;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="form-section">
+      <div class="form-header">
+        <h1><i class="ph ph-file-contract"></i> 修茈科技 · 视频定制合同</h1>
+        <p>小李会帮您拟定合同，您只需要在右侧回答他的问题即可</p>
+      </div>
+
+      <form id="contract-form">
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-info"></i> 合同基本信息</div>
+          
+          <div class="form-row" data-field="contract-title">
+            <label class="form-label">
+              <i class="ph ph-heading"></i> 合同标题 <span class="required">*</span>
+            </label>
+            <input type="text" class="form-input" id="contract-title" placeholder="例如：视频制作服务合同" required>
+          </div>
+
+          <div class="form-row" data-field="contract-number">
+            <label class="form-label">
+              <i class="ph ph-number-square-one"></i> 合同编号
+            </label>
+            <input type="text" class="form-input" id="contract-number" placeholder="例如：JJ-2026-001">
+          </div>
+
+          <div class="form-row" data-field="sign-date">
+            <label class="form-label">
+              <i class="ph ph-calendar-check"></i> 签订日期 <span class="required">*</span>
+            </label>
+            <input type="date" class="form-input" id="sign-date" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-users"></i> 合同双方</div>
+          
+          <div class="form-row" data-field="party-a">
+            <label class="form-label">
+              <i class="ph ph-building-office"></i> 甲方（委托方）<span class="required">*</span>
+            </label>
+            <input type="text" class="form-input" id="party-a" placeholder="公司全称" required>
+          </div>
+
+          <div class="form-row" data-field="party-a-contact">
+            <label class="form-label">
+              <i class="ph ph-user"></i> 甲方联系人
+            </label>
+            <input type="text" class="form-input" id="party-a-contact" placeholder="联系人姓名">
+          </div>
+
+          <div class="form-row" data-field="party-a-phone">
+            <label class="form-label">
+              <i class="ph ph-phone"></i> 甲方联系电话
+            </label>
+            <input type="tel" class="form-input" id="party-a-phone" placeholder="联系电话">
+          </div>
+
+          <div class="form-row" data-field="party-b">
+            <label class="form-label">
+              <i class="ph ph-buildings"></i> 乙方（承接方）<span class="required">*</span>
+            </label>
+            <input type="text" class="form-input" id="party-b" value="杭州修茈科技有限公司" readonly>
+          </div>
+
+          <div class="form-row" data-field="party-b-contact">
+            <label class="form-label">
+              <i class="ph ph-user"></i> 乙方联系人
+            </label>
+            <input type="text" class="form-input" id="party-b-contact" value="刘先生" readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-video"></i> 服务内容</div>
+          
+          <div class="form-row highlight-field" data-field="service-content">
+            <label class="form-label">
+              <i class="ph ph-list-bullets"></i> 服务项目详情 <span class="required">*</span>
+            </label>
+            <textarea class="form-textarea" id="service-content" placeholder="请详细描述视频制作服务内容，包括：视频类型、数量、时长、风格等" required></textarea>
+            <p class="field-hint">例如：抖音短视频制作，每月8条，每条15-30秒，搞笑风格</p>
+          </div>
+
+          <div class="form-row" data-field="video-count">
+            <label class="form-label">
+              <i class="ph ph-video-camera"></i> 视频数量
+            </label>
+            <input type="number" class="form-input" id="video-count" placeholder="请输入视频数量">
+          </div>
+
+          <div class="form-row" data-field="video-duration">
+            <label class="form-label">
+              <i class="ph ph-clock"></i> 单条视频时长
+            </label>
+            <select class="form-select" id="video-duration">
+              <option value="">请选择时长</option>
+              <option value="9-14秒">9-14秒</option>
+              <option value="16-22秒">16-22秒</option>
+              <option value="23-38秒">23-38秒</option>
+              <option value="38-46秒">38-46秒</option>
+              <option value="48-56秒">48-56秒</option>
+              <option value="1分钟以上">1分钟以上</option>
+            </select>
+          </div>
+
+          <div class="form-row" data-field="service-cycle">
+            <label class="form-label">
+              <i class="ph ph-calendar-range"></i> 服务周期 <span class="required">*</span>
+            </label>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <input type="date" class="form-input" id="service-start" required>
+              <span>至</span>
+              <input type="date" class="form-input" id="service-end" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-currency-circle-dollar"></i> 费用约定</div>
+          
+          <div class="form-row highlight-field" data-field="total-amount">
+            <label class="form-label">
+              <i class="ph ph-money"></i> 合同总金额 <span class="required">*</span>
+            </label>
+            <input type="text" class="form-input" id="total-amount" placeholder="例如：人民币 30,000 元" required>
+          </div>
+
+          <div class="form-row" data-field="payment-terms">
+            <label class="form-label">
+              <i class="ph ph-credit-card"></i> 付款方式 <span class="required">*</span>
+            </label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="payment-terms" value="一次性支付" checked>
+                <span>一次性支付</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="payment-terms" value="分期支付">
+                <span>分期支付</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="payment-terms" value="月付">
+                <span>月付</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="payment-terms" value="按项目进度支付">
+                <span>按项目进度支付</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row" data-field="payment-detail">
+            <label class="form-label">
+              <i class="ph ph-note"></i> 付款详情说明
+            </label>
+            <textarea class="form-textarea" id="payment-detail" placeholder="请详细说明各阶段的付款比例和时间"></textarea>
+          </div>
+
+          <div class="form-row" data-field="deposit">
+            <label class="form-label">
+              <i class="ph ph-bank"></i> 预付款比例
+            </label>
+            <select class="form-select" id="deposit">
+              <option value="">请选择预付款比例</option>
+              <option value="30%">30%</option>
+              <option value="40%">40%</option>
+              <option value="50%">50%</option>
+              <option value="60%">60%</option>
+              <option value="无预付款">无预付款</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-check-square-offset"></i> 交付标准</div>
+          
+          <div class="form-row" data-field="deliverables">
+            <label class="form-label">
+              <i class="ph ph-package"></i> 交付物 <span class="required">*</span>
+            </label>
+            <textarea class="form-textarea" id="deliverables" placeholder="请列出所有交付物，如：成片、源文件、封面图等" required></textarea>
+          </div>
+
+          <div class="form-row" data-field="revision-times">
+            <label class="form-label">
+              <i class="ph ph-arrow-counter-clockwise"></i> 免费修改次数
+            </label>
+            <select class="form-select" id="revision-times">
+              <option value="">请选择</option>
+              <option value="1次">1次</option>
+              <option value="2次">2次</option>
+              <option value="3次">3次</option>
+              <option value="5次">5次</option>
+              <option value="不限次数">不限次数</option>
+            </select>
+          </div>
+
+          <div class="form-row" data-field="delivery-time">
+            <label class="form-label">
+              <i class="ph ph-timer"></i> 交付时间（单条）
+            </label>
+            <input type="text" class="form-input" id="delivery-time" placeholder="例如：初稿3个工作日内">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-shield-check"></i> 权利与义务</div>
+          
+          <div class="form-row" data-field="copyright">
+            <label class="form-label">
+              <i class="ph ph-copyright"></i> 版权归属 <span class="required">*</span>
+            </label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="copyright" value="甲方所有" checked>
+                <span>甲方所有</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="copyright" value="乙方所有">
+                <span>乙方所有</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="copyright" value="双方共有">
+                <span>双方共有</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row" data-field="confidentiality">
+            <label class="form-label">
+              <i class="ph ph-lock-key"></i> 保密条款
+            </label>
+            <div class="checkbox-group">
+              <label class="checkbox-item">
+                <input type="checkbox" name="confidentiality" value="双方互相保密" checked>
+                <span>双方互相保密</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="confidentiality" value="素材保密">
+                <span>素材保密</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="confidentiality" value="价格保密">
+                <span>价格保密</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row" data-field="dispute-resolution">
+            <label class="form-label">
+              <i class="ph ph-scales"></i> 争议解决
+            </label>
+            <select class="form-select" id="dispute-resolution">
+              <option value="">请选择</option>
+              <option value="甲方所在地法院">甲方所在地法院</option>
+              <option value="乙方所在地法院">乙方所在地法院</option>
+              <option value="杭州仲裁委员会">杭州仲裁委员会</option>
+              <option value="双方协商解决">双方协商解决</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-group-title"><i class="ph ph-note-pencil"></i> 补充条款</div>
+          
+          <div class="form-row" data-field="additional-terms">
+            <label class="form-label">
+              <i class="ph ph-list-plus"></i> 其他约定
+            </label>
+            <textarea class="form-textarea" id="additional-terms" placeholder="如有其他特殊约定，请在此说明"></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" id="generate-preview">
+            <i class="ph ph-eye"></i> 生成预览
+          </button>
+          <button type="button" class="btn btn-secondary" id="save-draft">
+            <i class="ph ph-floppy-disk"></i> 保存草稿
+          </button>
+          <button type="button" class="btn btn-primary" id="export-word">
+            <i class="ph ph-file-doc"></i> 导出Word
+          </button>
+          <button type="button" class="btn btn-secondary" id="reset-form">
+            <i class="ph ph-arrow-counter-clockwise"></i> 重置
+          </button>
+        </div>
+
+        <div class="preview-section" id="preview-section" style="display: none;">
+          <h3><i class="ph ph-file-text"></i> 合同预览</h3>
+          <div class="contract-preview" id="contract-preview">
+            <!-- 合同内容会动态生成 -->
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="chat-section">
+      <div class="chat-header">
+        <h2><i class="ph ph-user-circle"></i> 小李 - 合同专员</h2>
+        <p>我会引导您完成合同拟定，请直接回答我的问题</p>
+        <div style="margin-top: 8px; font-size: 11px; opacity: 0.8; display: flex; align-items: center; gap: 6px;">
+          <i class="ph ph-robot"></i>
+          <span id="ai-model-name">正在加载AI配置...</span>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+      </div>
+
+      <div class="chat-input-area">
+        <div style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center;">
+          <button class="voice-btn" id="voice-toggle" onclick="toggleVoice()" title="开启/关闭语音播报">
+            <i class="ph ph-speaker-high"></i>
+            <span>语音播报：开</span>
+          </button>
+          <span id="voice-status" style="font-size: 12px; color: #8b949e; margin-left: auto;"></span>
+        </div>
+        <div class="chat-input-wrapper">
+          <textarea class="chat-input" id="chat-input" placeholder="输入您的回答..." rows="1"></textarea>
+          <button class="chat-send-btn" id="send-btn" onclick="sendMessage()">
+            <i class="ph ph-paper-plane-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .voice-btn {
+      padding: 6px 12px;
+      background: rgba(88, 166, 255, 0.1);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 16px;
+      color: #58a6ff;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .voice-btn:hover {
+      background: rgba(88, 166, 255, 0.2);
+    }
+    .voice-btn.active {
+      background: rgba(88, 166, 255, 0.3);
+      border-color: #58a6ff;
+    }
+  </style>
+
+  <script>
+    let voiceEnabled = true;
+    let currentAudio = null;
+    let recognition = null;
+    let isRecording = false;
+
+    function initSpeechRecognition() {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        recognition.onstart = function() {
+          isRecording = true;
+          updateVoiceInputUI();
+          document.getElementById('voice-status').textContent = '正在聆听...';
+        };
+        
+        recognition.onend = function() {
+          isRecording = false;
+          updateVoiceInputUI();
+          document.getElementById('voice-status').textContent = '';
+        };
+        
+        recognition.onresult = function(event) {
+          const transcript = event.results[0][0].transcript;
+          chatInput.value = transcript;
+          chatInput.style.height = 'auto';
+          chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+          setTimeout(() => {
+            sendMessage();
+          }, 500);
+        };
+        
+        recognition.onerror = function(event) {
+          console.error('语音识别错误:', event.error);
+          document.getElementById('voice-status').textContent = '识别失败，请重试';
+          isRecording = false;
+        };
+        
+        return true;
+      } else {
+        document.getElementById('voice-status').textContent = '您的浏览器不支持语音输入';
+        return false;
+      }
+    }
+
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      const btn = document.getElementById('voice-toggle');
+      const icon = btn.querySelector('i');
+      const text = btn.querySelector('span');
+      
+      if (voiceEnabled) {
+        btn.classList.add('active');
+        icon.className = 'ph ph-speaker-high';
+        text.textContent = '语音播报：开';
+        speak('语音播报已开启');
+      } else {
+        btn.classList.remove('active');
+        icon.className = 'ph ph-speaker-slash';
+        text.textContent = '语音播报：关';
+        if (currentAudio) {
+          try { currentAudio.pause(); } catch (e) {}
+          currentAudio = null;
+        }
+      }
+    }
+
+    async function speak(text) {
+      if (!voiceEnabled || !text || !text.trim()) return;
+
+      if (currentAudio) {
+        try { currentAudio.pause(); } catch (e) {}
+        currentAudio = null;
+      }
+
+      try {
+        const resp = await fetch('http://localhost:8080/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, lang: 'zh' })
+        });
+
+        const result = await resp.json();
+        if (!resp.ok || result.success === false) {
+          const msg = result && result.error && result.error.message ? result.error.message : 'TTS请求失败';
+          throw new Error(msg);
+        }
+        const data = result.data || {};
+        if (!data.audioBase64) {
+          throw new Error('无音频数据');
+        }
+
+        const audio = new Audio(data.audioBase64);
+        currentAudio = audio;
+        audio.play().catch((e) => { 
+          console.error('播放失败，尝试浏览器语音:', e);
+          speakWithBrowser(text);
+        });
+      } catch (e) {
+        console.log('TTS不可用，使用浏览器语音合成');
+        speakWithBrowser(text);
+      }
+    }
+
+    function speakWithBrowser(text) {
+      if (!voiceEnabled || !text) return;
+      
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        
+        const voices = window.speechSynthesis.getVoices();
+        const chineseVoice = voices.find(v => v.lang.includes('zh')) || voices[0];
+        if (chineseVoice) {
+          utterance.voice = chineseVoice;
+        }
+        
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const CONTRACT_NODE_ID = 'douyin-client-need';
+
+    function getAIConfig() {
+      let orgNodeModels = {};
+      let apiConfigs = {};
+      
+      try {
+        const storedNodeModels = localStorage.getItem('orgNodeModels');
+        orgNodeModels = storedNodeModels ? JSON.parse(storedNodeModels) : {};
+        
+        const storedApiConfigs = localStorage.getItem('aiApiConfigs');
+        apiConfigs = storedApiConfigs ? JSON.parse(storedApiConfigs) : {};
+      } catch (e) {
+        console.log('获取AI配置失败:', e);
+      }
+
+      const nodeConfig = orgNodeModels[CONTRACT_NODE_ID] || orgNodeModels['douyin-client'];
+      
+      if (nodeConfig && nodeConfig.provider && nodeConfig.model) {
+        return {
+          provider: nodeConfig.provider,
+          model: nodeConfig.model,
+          apiKey: apiConfigs[nodeConfig.provider] || '',
+          isModuleSpecific: true
+        };
+      }
+
+      let selectedModel = localStorage.getItem('selectedModel') || 'qwen-max';
+      let provider = 'qwen';
+      let model = selectedModel;
+      
+      if (selectedModel && selectedModel.includes(':')) {
+        [provider, model] = selectedModel.split(':');
+      }
+      
+      return { provider, model, apiKey: apiConfigs[provider] || '', isModuleSpecific: false };
+    }
+
+    function displayAIModelInfo() {
+      const config = getAIConfig();
+      const modelNameEl = document.getElementById('ai-model-name');
+      
+      if (modelNameEl) {
+        if (config.isModuleSpecific) {
+          modelNameEl.textContent = `合同拟定专用: ${config.provider} · ${config.model}`;
+          modelNameEl.style.color = '#58a6ff';
+        } else {
+          modelNameEl.textContent = `使用全局配置: ${config.provider} · ${config.model}`;
+          modelNameEl.style.color = '#fff';
+        }
+      }
+    }
+
+    async function callAI(messages) {
+      const config = getAIConfig();
+      
+      try {
+        const response = await fetch('http://localhost:8080/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: config.provider,
+            model: config.model,
+            messages: messages,
+            apiKey: config.apiKey,
+            source: 'contract-form'
+          })
+        });
+        
+        const result = await response.json();
+        if (!response.ok || result.success === false) {
+          const msg = result && result.error && result.error.message ? result.error.message : response.statusText;
+          throw new Error('AI请求失败: ' + msg);
+        }
+        
+        const data = result.data || {};
+        return data.content || data.message || '抱歉，我没有理解，请再说一遍。';
+      } catch (error) {
+        console.error('AI调用失败:', error);
+        addMessage('⚠️ AI连接失败: ' + error.message + '，请检查后端服务是否启动，或在控制台查看详情', 'ai');
+        return null;
+      }
+    }
+
+    function buildSystemPrompt() {
+      return `你现在扮演一名「合同专员小李」，专门负责为修茈科技视频定制公司拟定视频制作服务合同。
+
+【你的职责】
+- 熟悉视频制作服务行业的合同规范
+- 严格按照法律要求拟定合同条款
+- 保护双方权益，条款清晰合理
+- 语气专业、严谨、礼貌
+
+【当前任务 - 合同拟定】
+你需要引导客户填写合同信息，收集以下内容：
+1. 合同标题（如：视频制作服务合同）
+2. 签订日期
+3. 甲方信息（委托方公司全称、联系人、电话）
+4. 乙方信息（已固定为：杭州修茈科技有限公司）
+5. 服务内容详情（视频类型、数量、时长、风格）
+6. 服务周期（开始日期和结束日期）
+7. 合同总金额
+8. 付款方式（一次性/分期/月付/按进度）
+9. 交付物清单（成片、源文件、封面等）
+10. 免费修改次数
+11. 版权归属
+12. 争议解决方式
+
+【对话要求】
+- 语气专业、严谨、有耐心
+- 每次只问1-2个问题，等待客户回答后再继续
+- 如果客户回答不够清晰，友善地追问
+- 适时解释相关条款的意义
+- 保持对话流畅自然
+
+【回答风格】
+- 用「确认收到 → 简要回应 → 自然过渡 → 下一个问题」的结构
+- 适当使用专业术语，展示专业性`;
+    }
+
+    let conversationHistory = [
+      { role: 'system', content: buildSystemPrompt() }
+    ];
+
+    const fieldMappings = {
+      'contract-title': { name: '合同标题', type: 'text' },
+      'party-a': { name: '甲方公司', type: 'text' },
+      'party-a-contact': { name: '甲方联系人', type: 'text' },
+      'party-a-phone': { name: '甲方电话', type: 'text' },
+      'service-content': { name: '服务内容', type: 'text' },
+      'video-count': { name: '视频数量', type: 'text' },
+      'video-duration': { name: '视频时长', type: 'select' },
+      'service-start': { name: '服务开始日期', type: 'text' },
+      'service-end': { name: '服务结束日期', type: 'text' },
+      'total-amount': { name: '合同金额', type: 'text' },
+      'payment-terms': { name: '付款方式', type: 'radio' },
+      'deliverables': { name: '交付物', type: 'text' },
+      'revision-times': { name: '修改次数', type: 'select' },
+      'copyright': { name: '版权归属', type: 'radio' }
+    };
+
+    function highlightField(fieldId) {
+      document.querySelectorAll('.form-row').forEach(row => {
+        row.classList.remove('filling');
+      });
+      
+      if (fieldId) {
+        const row = document.querySelector(`[data-field="${fieldId}"]`);
+        if (row) {
+          row.classList.add('filling');
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+
+    function markFieldFilled(fieldId) {
+      const row = document.querySelector(`[data-field="${fieldId}"]`);
+      if (row) {
+        row.classList.remove('filling');
+        row.classList.add('filled');
+      }
+    }
+
+    async function initXiaoLi() {
+      conversationHistory.push({
+        role: 'user',
+        content: '请开始对话，向客户打招呼并询问合同标题。'
+      });
+      
+      showTypingIndicator();
+      const aiResponse = await callAI(conversationHistory);
+      hideTypingIndicator();
+      
+      if (aiResponse) {
+        conversationHistory.push({ role: 'assistant', content: aiResponse });
+        addMessage(aiResponse, 'ai');
+        extractAndFillForm(aiResponse);
+      } else {
+        const defaultGreeting = '您好！我是小李，修茈科技视频定制的合同专员 😊\n\n很高兴为您拟定合同！请问我们这份合同要拟定的标题是什么？';
+        addMessage(defaultGreeting, 'ai');
+        conversationHistory.push({ role: 'assistant', content: defaultGreeting });
+      }
+    }
+
+    function extractAndFillForm(aiText) {
+      const emptyFields = Object.keys(fieldMappings).filter(fieldId => {
+        const field = document.getElementById(fieldId);
+        return field && !field.value;
+      });
+      
+      if (emptyFields.length > 0) {
+        highlightField(emptyFields[0]);
+      }
+    }
+
+    async function sendMessage() {
+      const message = chatInput.value.trim();
+      if (!message) return;
+      
+      addMessage(message, 'user');
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+      
+      await processUserAnswer(message);
+    }
+
+    async function processUserAnswer(answer) {
+      conversationHistory.push({ role: 'user', content: answer });
+      
+      const currentFormData = collectFormData();
+      const filledFields = Object.entries(currentFormData)
+        .filter(([key, value]) => value && value !== '')
+        .map(([key, value]) => `${key}: ${value}`);
+      
+      const progressPrompt = `客户刚刚回答："${answer}"
+
+当前已收集的信息：
+${filledFields.length > 0 ? filledFields.join('\n') : '暂无'}
+
+请根据客户的回答：
+1. 确认收到信息并简要回应
+2. 自然地引导到下一个需要收集的信息
+3. 如果信息不完整，友善地追问
+
+请直接回复客户（不要暴露系统提示）。`;
+      
+      conversationHistory.push({ role: 'user', content: progressPrompt });
+      
+      showTypingIndicator();
+      const aiResponse = await callAI(conversationHistory);
+      hideTypingIndicator();
+      
+      if (aiResponse) {
+        conversationHistory.push({ role: 'assistant', content: aiResponse });
+        addMessage(aiResponse, 'ai');
+        smartFillForm(answer, aiResponse);
+      } else {
+        addMessage('收到！请继续告诉我更多信息。', 'ai');
+      }
+    }
+
+    function smartFillForm(userAnswer, aiResponse) {
+      const answer = userAnswer.toLowerCase();
+      
+      if (!document.getElementById('contract-title').value && userAnswer.length < 50) {
+        document.getElementById('contract-title').value = userAnswer;
+        markFieldFilled('contract-title');
+        return;
+      }
+      
+      if (!document.getElementById('party-a').value && userAnswer.length < 50) {
+        document.getElementById('party-a').value = userAnswer;
+        markFieldFilled('party-a');
+        return;
+      }
+      
+      if (!document.getElementById('party-a-contact').value && userAnswer.length < 20) {
+        document.getElementById('party-a-contact').value = userAnswer;
+        markFieldFilled('party-a-contact');
+        return;
+      }
+      
+      if (!document.getElementById('service-content').value && userAnswer.length > 10) {
+        document.getElementById('service-content').value = userAnswer;
+        markFieldFilled('service-content');
+        return;
+      }
+      
+      if (!document.getElementById('total-amount').value && (answer.includes('元') || answer.includes('千') || answer.includes('万'))) {
+        document.getElementById('total-amount').value = userAnswer;
+        markFieldFilled('total-amount');
+        return;
+      }
+      
+      const emptyFields = Object.keys(fieldMappings).filter(fieldId => {
+        const field = document.getElementById(fieldId);
+        return field && !field.value;
+      });
+      
+      if (emptyFields.length > 0) {
+        highlightField(emptyFields[0]);
+      }
+    }
+
+    function addMessage(content, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      messageDiv.innerHTML = `
+        <div style="white-space: pre-line;">${content}</div>
+        <div class="message-time">${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
+      `;
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      if (type === 'ai') {
+        const plainText = content.replace(/[😊🎉✅👍💡]/g, '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        speak(plainText);
+      }
+    }
+
+    function showTypingIndicator() {
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'message ai typing';
+      typingDiv.id = 'typing-indicator';
+      typingDiv.innerHTML = `
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      `;
+      chatMessages.appendChild(typingDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+      const typingIndicator = document.getElementById('typing-indicator');
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+    }
+
+    chatInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    chatInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function collectFormData() {
+      const data = {
+        contractTitle: document.getElementById('contract-title').value,
+        contractNumber: document.getElementById('contract-number').value,
+        signDate: document.getElementById('sign-date').value,
+        partyA: document.getElementById('party-a').value,
+        partyAContact: document.getElementById('party-a-contact').value,
+        partyAPhone: document.getElementById('party-a-phone').value,
+        partyB: document.getElementById('party-b').value,
+        partyBContact: document.getElementById('party-b-contact').value,
+        serviceContent: document.getElementById('service-content').value,
+        videoCount: document.getElementById('video-count').value,
+        videoDuration: document.getElementById('video-duration').value,
+        serviceStart: document.getElementById('service-start').value,
+        serviceEnd: document.getElementById('service-end').value,
+        totalAmount: document.getElementById('total-amount').value,
+        paymentTerms: document.querySelector('input[name="payment-terms"]:checked')?.value,
+        paymentDetail: document.getElementById('payment-detail').value,
+        deposit: document.getElementById('deposit').value,
+        deliverables: document.getElementById('deliverables').value,
+        revisionTimes: document.getElementById('revision-times').value,
+        deliveryTime: document.getElementById('delivery-time').value,
+        copyright: document.querySelector('input[name="copyright"]:checked')?.value,
+        disputeResolution: document.getElementById('dispute-resolution').value,
+        additionalTerms: document.getElementById('additional-terms').value
+      };
+      return data;
+    }
+
+    function generateContractPreview() {
+      const data = collectFormData();
+      
+      const html = `
+        <h2>${data.contractTitle || '视频制作服务合同'}</h2>
+        <p><strong>合同编号：</strong>${data.contractNumber || '___'}</p>
+        <p><strong>签订日期：</strong>${data.signDate || '___'}</p>
+        
+        <h3>一、合同双方</h3>
+        <p>甲方（委托方）：${data.partyA || '___'}</p>
+        <p>甲方联系人：${data.partyAContact || '___'}</p>
+        <p>甲方联系电话：${data.partyAPhone || '___'}</p>
+        <p>乙方（承接方）：${data.partyB || '杭州修茈科技有限公司'}</p>
+        <p>乙方联系人：${data.partyBContact || '刘先生'}</p>
+        
+        <h3>二、服务内容</h3>
+        <p>${data.serviceContent || '___'}</p>
+        <p>视频数量：${data.videoCount || '___'}条</p>
+        <p>单条时长：${data.videoDuration || '___'}</p>
+        <p>服务周期：${data.serviceStart || '___'} 至 ${data.serviceEnd || '___'}</p>
+        
+        <h3>三、费用及付款</h3>
+        <p>合同总金额：${data.totalAmount || '___'}</p>
+        <p>付款方式：${data.paymentTerms || '___'}</p>
+        <p>${data.paymentDetail || ''}</p>
+        <p>预付款比例：${data.deposit || '___'}</p>
+        
+        <h3>四、交付标准</h3>
+        <p>交付物：${data.deliverables || '___'}</p>
+        <p>免费修改次数：${data.revisionTimes || '___'}</p>
+        <p>交付时间：${data.deliveryTime || '___'}</p>
+        
+        <h3>五、权利与义务</h3>
+        <p>版权归属：${data.copyright || '___'}</p>
+        <p>争议解决：${data.disputeResolution || '___'}</p>
+        
+        <h3>六、补充条款</h3>
+        <p>${data.additionalTerms || '无'}</p>
+        
+        <div class="signature">
+          <div>
+            <p>甲方（盖章）：</p>
+            <div class="line">签字：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 日期：</div>
+          </div>
+          <div>
+            <p>乙方（盖章）：</p>
+            <div class="line">签字：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 日期：</div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('contract-preview').innerHTML = html;
+      document.getElementById('preview-section').style.display = 'block';
+      document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('generate-preview').addEventListener('click', generateContractPreview);
+
+    document.getElementById('export-word').addEventListener('click', async function() {
+      const data = collectFormData();
+      
+      if (!data.contractTitle || !data.partyA || !data.serviceContent || !data.totalAmount) {
+        alert('请先填写必要的合同信息（合同标题、甲方、服务内容、合同金额）');
+        return;
+      }
+
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
+
+      const tableStyle = {
+        indentation: { left: 720, type: WidthType.DXA },
+      };
+
+      const children = [
+        new Paragraph({
+          text: data.contractTitle || '视频制作服务合同',
+          heading: HeadingLevel.TITLE,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '合同编号：', bold: true }),
+            new TextRun({ text: data.contractNumber || '___________' }),
+            new TextRun({ text: '          签订日期：', bold: true }),
+            new TextRun({ text: data.signDate || '___________' }),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          text: '一、合同双方',
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '甲方（委托方）：', bold: true }),
+            new TextRun({ text: data.partyA || '___________' }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '甲方联系人：', bold: true }),
+            new TextRun({ text: data.partyAContact || '___________' }),
+            new TextRun({ text: '          联系电话：', bold: true }),
+            new TextRun({ text: data.partyAPhone || '___________' }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '乙方（承接方）：', bold: true }),
+            new TextRun({ text: data.partyB || '杭州修茈科技有限公司' }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '乙方联系人：', bold: true }),
+            new TextRun({ text: data.partyBContact || '刘先生' }),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          text: '二、服务内容',
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          text: data.serviceContent || '___________',
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '视频数量：', bold: true }),
+            new TextRun({ text: data.videoCount || '___________' }),
+            new TextRun({ text: '条          单条时长：', bold: true }),
+            new TextRun({ text: data.videoDuration || '___________' }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '服务周期：', bold: true }),
+            new TextRun({ text: (data.serviceStart || '___________') + ' 至 ' + (data.serviceEnd || '___________') }),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          text: '三、费用及付款',
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '合同总金额：', bold: true }),
+            new TextRun({ text: data.totalAmount || '___________' }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '付款方式：', bold: true }),
+            new TextRun({ text: data.paymentTerms || '___________' }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          text: data.paymentDetail || '',
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '预付款比例：', bold: true }),
+            new TextRun({ text: data.deposit || '___________' }),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          text: '四、交付标准',
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '交付物：', bold: true }),
+            new TextRun({ text: data.deliverables || '___________' }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '免费修改次数：', bold: true }),
+            new TextRun({ text: data.revisionTimes || '___________' }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '交付时间：', bold: true }),
+            new TextRun({ text: data.deliveryTime || '___________' }),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          text: '五、权利与义务',
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '版权归属：', bold: true }),
+            new TextRun({ text: data.copyright || '___________' }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: '争议解决：', bold: true }),
+            new TextRun({ text: data.disputeResolution || '___________' }),
+          ],
+          spacing: { after: 200 },
+        }),
+      ];
+
+      if (data.additionalTerms) {
+        children.push(
+          new Paragraph({
+            text: '六、补充条款',
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200, after: 100 },
+          }),
+          new Paragraph({
+            text: data.additionalTerms,
+            spacing: { after: 200 },
+          })
+        );
+      }
+
+      children.push(
+        new Paragraph({
+          text: '',
+          spacing: { before: 400, after: 200 },
+        }),
+        new Table({
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: '甲方（盖章）', bold: true })] })],
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: '乙方（盖章）', bold: true })] })],
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph('签字：'),
+                    new Paragraph({ text: ' ', spacing: { before: 200 } }),
+                    new Paragraph('日期：'),
+                  ],
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph('签字：'),
+                    new Paragraph({ text: ' ', spacing: { before: 200 } }),
+                    new Paragraph('日期：'),
+                  ],
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+          ],
+        })
+      );
+
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: children,
+        }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const fileName = (data.contractTitle || '合同') + '_' + (data.contractNumber || new Date().toISOString().slice(0,10)) + '.docx';
+      saveAs(blob, fileName);
+      
+      addMessage('📄 合同Word文档已导出：' + fileName, 'ai');
+      alert('合同Word文档已成功导出！');
+    });
+
+    document.getElementById('contract-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const data = collectFormData();
+      console.log('合同数据：', data);
+      
+      addMessage('🎉 合同已生成！\n\n请预览确认无误后，可以导出Word文档。', 'ai');
+      
+      alert('合同信息已提交！请点击"生成预览"或"导出Word"查看/导出合同。');
+    });
+
+    document.getElementById('save-draft').addEventListener('click', function() {
+      const data = collectFormData();
+      localStorage.setItem('contractFormDraft', JSON.stringify(data));
+      addMessage('✅ 合同草稿已保存到本地', 'ai');
+    });
+
+    document.getElementById('reset-form').addEventListener('click', function() {
+      if (confirm('确定要重置合同吗？已填写的数据将清空。')) {
+        document.getElementById('contract-form').reset();
+        document.getElementById('party-b').value = '杭州修茈科技有限公司';
+        document.getElementById('party-b-contact').value = '刘先生';
+        document.querySelectorAll('.form-row').forEach(row => {
+          row.classList.remove('filled', 'filling');
+        });
+        document.getElementById('preview-section').style.display = 'none';
+        addMessage('合同已重置，我们重新开始吧！😊', 'ai');
+        setTimeout(() => {
+          initXiaoLi();
+        }, 1000);
+      }
+    });
+
+    function loadDraft() {
+      const draft = localStorage.getItem('contractFormDraft');
+      if (draft) {
+        const data = JSON.parse(draft);
+        
+        if (data.contractTitle) document.getElementById('contract-title').value = data.contractTitle;
+        if (data.contractNumber) document.getElementById('contract-number').value = data.contractNumber;
+        if (data.signDate) document.getElementById('sign-date').value = data.signDate;
+        if (data.partyA) document.getElementById('party-a').value = data.partyA;
+        if (data.partyAContact) document.getElementById('party-a-contact').value = data.partyAContact;
+        if (data.partyAPhone) document.getElementById('party-a-phone').value = data.partyAPhone;
+        if (data.serviceContent) document.getElementById('service-content').value = data.serviceContent;
+        if (data.videoCount) document.getElementById('video-count').value = data.videoCount;
+        if (data.videoDuration) document.getElementById('video-duration').value = data.videoDuration;
+        if (data.serviceStart) document.getElementById('service-start').value = data.serviceStart;
+        if (data.serviceEnd) document.getElementById('service-end').value = data.serviceEnd;
+        if (data.totalAmount) document.getElementById('total-amount').value = data.totalAmount;
+        if (data.paymentDetail) document.getElementById('payment-detail').value = data.paymentDetail;
+        if (data.deposit) document.getElementById('deposit').value = data.deposit;
+        if (data.deliverables) document.getElementById('deliverables').value = data.deliverables;
+        if (data.revisionTimes) document.getElementById('revision-times').value = data.revisionTimes;
+        if (data.deliveryTime) document.getElementById('delivery-time').value = data.deliveryTime;
+        if (data.disputeResolution) document.getElementById('dispute-resolution').value = data.disputeResolution;
+        if (data.additionalTerms) document.getElementById('additional-terms').value = data.additionalTerms;
+        
+        if (data.paymentTerms) {
+          const paymentRadio = document.querySelector(`input[name="payment-terms"][value="${data.paymentTerms}"]`);
+          if (paymentRadio) paymentRadio.checked = true;
+        }
+        if (data.copyright) {
+          const copyrightRadio = document.querySelector(`input[name="copyright"][value="${data.copyright}"]`);
+          if (copyrightRadio) copyrightRadio.checked = true;
+        }
+        
+        document.querySelectorAll('.form-row').forEach(row => {
+          const fieldId = row.dataset.field;
+          if (fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field && field.value) {
+              row.classList.add('filled');
+            }
+          }
+        });
+        
+        addMessage('检测到您有未完成的合同草稿，已帮您恢复。继续完善合同吧！😊', 'ai');
+        
+        // 有草稿且有AI配置时才继续对话
+        if (hasAIConfig()) {
+          for (let i = 0; i < questions.length; i++) {
+            const field = document.getElementById(questions[i].field);
+            if (!field || !field.value) {
+              currentQuestionIndex = i - 1;
+              setTimeout(() => {
+                askQuestion(i);
+              }, 1500);
+              return;
+            }
+          }
+          setTimeout(() => {
+            addMessage('看起来您已经填写完所有信息了！请检查一下左侧表单，确认无误后就可以提交啦~ 🎉', 'ai');
+          }, 1500);
+        }
+      } else {
+        // 无草稿时，根据是否有AI配置决定是否自动开始对话
+        if (hasAIConfig()) {
+          initXiaoLi();
+        } else {
+          addMessage('🤖 您好！我是小李，修茈科技的合同专员。\n\n请先在组织架构中为此任务接入AI模型，然后我们就可以开始拟定合同啦！', 'ai');
+        }
+      }
+    }
+
+    window.addEventListener('load', function() {
+      displayAIModelInfo();
+      loadDraft();
+    });
+
+    // 检查是否有可用的 AI 配置（只需要有模型即可，apiKey可能在全局配置中）
+    function hasAIConfig() {
+      const config = getAIConfig();
+      return config.provider && config.model;
+    }
+  </script>
+</body>
+</html>

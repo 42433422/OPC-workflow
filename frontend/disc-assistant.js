@@ -21,6 +21,11 @@ class DiscAssistant {
     this.synthesis = window.speechSynthesis;
     this.messages = [];
     this.isVoiceMode = false;
+    // 轻量级“工作区 / 上下文”，用于记住最近操作的构建单位等
+    this.context = {
+      lastOrgNodeName: null,
+      lastOrgPanelType: null
+    };
 
     // 简单声音引擎（提示音），使用 Web Audio 生成，不需要额外音频文件
     this.audioCtx = null;
@@ -367,7 +372,23 @@ class DiscAssistant {
     this.setState('processing');
     this.addMessage('user', command);
 
-    // 优先尝试调用大模型（如果已在模型库里为小碟选好了模型）
+    // 1）优先尝试调用后端 /api/assistant，让大模型选择工具（intent routing）
+    const usedAssistantIntent = await this.tryAssistantIntent(command);
+    if (usedAssistantIntent) {
+      this.setState('awake');
+      return;
+    }
+
+    // 2）本地快速技能：如果是明显的“正在为您打开...”类指令，走本地 skills + tools，避免额外延迟
+    const localResponse = this.generateResponse(command);
+    if (localResponse && (localResponse.startsWith('正在为您打开') || localResponse.includes('正在为您打开'))) {
+      this.addMessage('assistant', localResponse);
+      this.speak(localResponse);
+      this.setState('awake');
+      return;
+    }
+
+    // 3）常规聊天：尝试调用大模型（如果已在模型库里为小碟选好了模型）
     const usedModel = await this.tryCallLLM(command);
     if (usedModel) {
       this.setState('awake');
@@ -379,6 +400,114 @@ class DiscAssistant {
     this.addMessage('assistant', response);
     this.speak(response);
     this.setState('awake');
+  }
+
+  // ========== 调用后端大模型 ==========
+  async tryAssistantIntent(command) {
+    try {
+      const orgNodeModels = window.orgNodeModels || {};
+      const binding = orgNodeModels['disc-assistant'];
+      if (!binding || !binding.provider || !binding.model) {
+        return false;
+      }
+
+      const aiProviders = window.aiProviders || {};
+      const apiConfigs = window.apiConfigs || {};
+      const providerCfg = aiProviders[binding.provider];
+      if (!providerCfg) {
+        return false;
+      }
+
+      const requireKey = providerCfg.requireKey !== false;
+      const apiKey = apiConfigs[binding.provider];
+      if (requireKey && !apiKey) {
+        // 不在这里提示缺 key，留给普通对话时统一提示，避免打扰
+        return false;
+      }
+
+      const payload = {
+        provider: binding.provider,
+        model: binding.model,
+        apiKey: apiKey || '',
+        message: command,
+        sessionId: window.discAssistantSessionId || undefined
+      };
+
+      const response = await fetch('http://localhost:8080/api/assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        console.error('调用 /api/assistant 失败:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      const tool = data.tool || 'default_reply';
+      const args = data.args || {};
+      const reply = (data.reply || '').toString();
+
+      // 根据 tool 选择具体动作
+      if (tool === 'open_finance_report') {
+        try {
+          if (typeof window !== 'undefined' && window.location) {
+            window.location.href = './finance-report.html';
+          }
+        } catch (e) {
+          console.warn('前端跳转财务报表失败:', e);
+        }
+        if (reply) {
+          this.addMessage('assistant', reply);
+          this.speak(reply);
+        }
+        return true;
+      }
+
+      if (tool === 'open_org_node_panel') {
+        const nodeName = (args.nodeName || '').toString().trim();
+        const panelType = args.panelType || 'feature';
+        if (!nodeName) {
+          return false;
+        }
+
+        if (window.openOrgNodeHoverMenuByName) {
+          const ok = window.openOrgNodeHoverMenuByName(nodeName, panelType);
+          if (ok) {
+            // 记录上下文
+            if (this.context) {
+              this.context.lastOrgNodeName = nodeName;
+              this.context.lastOrgPanelType = panelType || 'feature';
+            }
+            if (reply) {
+              this.addMessage('assistant', reply);
+              this.speak(reply);
+            }
+            return true;
+          }
+        }
+        // 如果打开失败，就让后续本地规则 / 普通对话继续尝试
+        return false;
+      }
+
+      // 默认：只是一句自然语言回复，不调用工具
+      if (tool === 'default_reply') {
+        if (reply) {
+          this.addMessage('assistant', reply);
+          this.speak(reply);
+          return true;
+        }
+        return false;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('tryAssistantIntent 出错:', err);
+      return false;
+    }
   }
 
   // ========== 调用后端大模型 ==========
@@ -412,8 +541,20 @@ class DiscAssistant {
         .map(e => `姓名: ${e.name}, 职位: ${e.role}, 部门: ${e.dept}${e.note ? ', 备注: ' + e.note : ''}`)
         .join('\n');
 
+      // 根据当前助手声音选择，决定语言偏好
+      let assistantVoices = window.assistantVoices || {};
+      let voiceLangHint = '';
+      if (assistantVoices && assistantVoices.xiaodieLang) {
+        if (assistantVoices.xiaodieLang === 'en') {
+          voiceLangHint = '\n请优先使用自然的英文回答用户问题。';
+        } else if (assistantVoices.xiaodieLang === 'ja') {
+          voiceLangHint = '\n请优先使用自然的日文回答用户问题。';
+        }
+      }
+
       const systemPrompt =
         '你是公司内部的语音助手「小碟」。请用简洁、自然的中文回答用户问题。' +
+        voiceLangHint +
         (empText ? `\n以下是公司员工的一些信息，可在需要时参考：\n${empText}` : '');
 
       const response = await fetch('http://localhost:8080/api/chat', {
@@ -437,14 +578,17 @@ class DiscAssistant {
         })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        this.addMessage('assistant', `❌ 调用大模型失败（${response.status}）：${errorText}`);
+      const result = await response.json();
+      if (!response.ok || result.success === false) {
+        const msg = result && result.error && result.error.message
+          ? result.error.message
+          : `调用大模型失败（${response.status}）`;
+        this.addMessage('assistant', '❌ ' + msg);
         return false;
       }
 
-      const data = await response.json();
-      const content = (data && data.content) ? data.content : '(模型没有返回内容)';
+      const data = result.data || {};
+      const content = data && data.content ? data.content : '(模型没有返回内容)';
 
       this.addMessage('assistant', content);
       this.speak(content);
@@ -458,6 +602,275 @@ class DiscAssistant {
 
   generateResponse(command) {
     const cmd = command.toLowerCase();
+    const self = this;
+
+    // ========== tools：把“动作”封装为可复用工具 ==========
+    const tools = {
+      // 打开财务报表页面
+      openFinanceReport() {
+        try {
+          if (typeof window !== 'undefined' && window.location) {
+            window.location.href = './finance-report.html';
+          }
+        } catch (e) {
+          console.warn('跳转财务报表页面失败:', e);
+        }
+      },
+
+      // 根据构建单位名称 + 面板类型，打开组织架构悬浮窗
+      openOrgNodePanel(nodeName, panelType) {
+        if (!nodeName || !window.openOrgNodeHoverMenuByName) {
+          return { success: false, reason: 'no-api' };
+        }
+        const ok = window.openOrgNodeHoverMenuByName(nodeName, panelType);
+        return { success: !!ok, reason: ok ? 'ok' : 'not-found' };
+      },
+
+      // 打开剪映小助手
+      openJianyingAssistant(title) {
+        try {
+          const name = title || '剪影剪辑的剪映草稿';
+          if (typeof window !== 'undefined' && window.location) {
+            window.location.href = `./jianying-assistant.html?name=${encodeURIComponent(name)}`;
+          }
+        } catch (e) {
+          console.warn('跳转剪映小助手失败:', e);
+        }
+      },
+
+      // 打开声音模型工程师工作台
+      openVoiceEngineer() {
+        try {
+          if (typeof window !== 'undefined' && window.location) {
+            window.location.href = './voice-engineer.html';
+          }
+        } catch (e) {
+          console.warn('跳转语言模型工程师工作台失败:', e);
+        }
+      }
+    };
+
+    // ========== skills：示范几个“能力模块” ==========
+    const skills = [
+      // 1）财务报表 / 财务部工作情况
+      {
+        name: 'finance-report',
+        match: (raw) => {
+          return (
+            (raw.includes('财务部') ||
+              raw.includes('财务情况') ||
+              raw.includes('模型花费') ||
+              raw.includes('AI 花费') ||
+              raw.includes('ai 花费')) &&
+            (raw.includes('工作情况') ||
+              raw.includes('工作簿') ||
+              raw.includes('报表') ||
+              raw.includes('情况') ||
+              raw.includes('打开') ||
+              raw.includes('查看'))
+          );
+        },
+        run: () => {
+          tools.openFinanceReport();
+          return '正在为您打开「财务部 · AI 花费报表」工作情况页面，请稍候…';
+        }
+      },
+
+      // 2）剪影剪辑工作情况 → 直接进剪映小助手
+      {
+        name: 'jianying-work',
+        match: (raw, lower) => {
+          return (
+            raw.includes('剪影剪辑') &&
+            (raw.includes('工作情况') ||
+              raw.includes('工作') ||
+              raw.includes('助手') ||
+              raw.includes('剪映'))
+          );
+        },
+        run: () => {
+          tools.openJianyingAssistant('剪影剪辑的剪映草稿');
+          return '正在为您打开「剪影剪辑」的剪映小助手，请稍候…';
+        }
+      },
+
+      // 3）语言模型工程师 / 声音模型工作情况 → 打开声音模型工作台
+      {
+        name: 'voice-engineer-work',
+        match: (raw) => {
+          const hasRole =
+            raw.includes('语言模型工程师') ||
+            raw.includes('声音模型工程师') ||
+            raw.includes('声音工程师') ||
+            raw.includes('配音工程师') ||
+            raw.includes('声音模型');
+          const hasWork =
+            raw.includes('工作情况') ||
+            raw.includes('工作台') ||
+            raw.includes('助手') ||
+            raw.includes('打开') ||
+            raw.includes('进入');
+          return hasRole && hasWork;
+        },
+        run: () => {
+          tools.openVoiceEngineer();
+          return '正在为您打开「语言模型工程师」的声音模型工作台，请稍候…';
+        }
+      },
+
+      // 4）通用构建单位工作情况 / 悬浮窗 / 模型接入 / 提示词
+      {
+        name: 'org-node-panel',
+        match: (raw) => {
+          const hasOpen = raw.includes('打开') || raw.includes('查看');
+          const hasWork = raw.includes('工作情况') || raw.includes('工作') || raw.includes('情况');
+          const hasFeature =
+            raw.includes('悬浮窗') || raw.includes('菜单') || raw.includes('详细') || raw.includes('功能');
+          const hasModel = raw.includes('模型接入') || raw.includes('模型');
+          const hasPrompt = raw.includes('提示词');
+          return hasOpen || hasWork || hasFeature || hasModel || hasPrompt;
+        },
+        run: (raw) => {
+          const hasOpen = raw.includes('打开') || raw.includes('查看');
+          const hasWork = raw.includes('工作情况') || raw.includes('工作') || raw.includes('情况');
+          const hasFeature =
+            raw.includes('悬浮窗') || raw.includes('菜单') || raw.includes('详细') || raw.includes('功能');
+          const hasModel = raw.includes('模型接入') || raw.includes('模型');
+          const hasPrompt = raw.includes('提示词');
+
+          // 判断要打开什么类型的面板
+          let panelType = false;
+          if (hasWork) {
+            panelType = 'work';
+          } else if (hasFeature) {
+            panelType = 'feature';
+          } else if (hasModel) {
+            panelType = 'model';
+          } else if (hasPrompt) {
+            panelType = 'prompt';
+          } else if (hasOpen) {
+            panelType = 'feature';
+          }
+
+          let nodeName = '';
+          let cleanCmd = raw;
+          if (cleanCmd.startsWith('打开')) {
+            cleanCmd = cleanCmd.substring(2);
+          } else if (cleanCmd.startsWith('查看')) {
+            cleanCmd = cleanCmd.substring(2);
+          }
+
+          if (cleanCmd.endsWith('工作情况')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 4);
+          } else if (cleanCmd.endsWith('工作')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+          } else if (cleanCmd.endsWith('情况')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+          } else if (cleanCmd.endsWith('悬浮窗')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 3);
+          } else if (cleanCmd.endsWith('菜单')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+          } else if (cleanCmd.endsWith('功能')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+          } else if (cleanCmd.endsWith('模型接入')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 4);
+          } else if (cleanCmd.endsWith('模型')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+          } else if (cleanCmd.endsWith('提示词')) {
+            nodeName = cleanCmd.substring(0, cleanCmd.length - 3);
+          }
+
+          nodeName = nodeName.trim();
+          if (!nodeName) {
+            // 没解析出构建单位名称，交给后面的默认规则处理
+            return null;
+          }
+
+          const result = tools.openOrgNodePanel(nodeName, panelType);
+          if (!result.success) {
+            if (result.reason === 'not-found') {
+              return `抱歉，未找到名为「${nodeName}」的构建单位。请尝试说出完整的部门或员工名称，例如"打开财务部工作情况"。`;
+            }
+            return '抱歉，当前页面不支持打开构建单位悬浮窗功能。';
+          }
+
+          // 记录上下文，方便后续用“它”的指代
+          if (self && self.context) {
+            self.context.lastOrgNodeName = nodeName;
+            self.context.lastOrgPanelType = panelType || 'feature';
+          }
+
+          const panelNames = {
+            feature: '功能面板',
+            work: '工作情况',
+            model: '模型接入',
+            prompt: '提示词'
+          };
+          const panelName = panelType ? panelNames[panelType] : '悬浮菜单';
+          return `正在为您打开「${nodeName}」的${panelName}，请稍候...`;
+        }
+      },
+
+      // 5）指代型指令：比如“再打开一下它的工作情况”、“看看它的模型接入”
+      {
+        name: 'org-node-pronoun',
+        match: (raw) => {
+          const hasPronoun = raw.includes('它') || raw.includes('他的') || raw.includes('她的') || raw.includes('这家');
+          const hasPanel =
+            raw.includes('工作情况') ||
+            raw.includes('工作') ||
+            raw.includes('模型接入') ||
+            raw.includes('模型') ||
+            raw.includes('悬浮窗') ||
+            raw.includes('菜单');
+          return hasPronoun && hasPanel;
+        },
+        run: (raw) => {
+          if (!self || !self.context || !self.context.lastOrgNodeName) {
+            return '你说的“它”是指哪个构建单位？可以先说一次完整名称，例如“打开财务部工作情况”。';
+          }
+
+          const lastName = self.context.lastOrgNodeName;
+          let panelType = self.context.lastOrgPanelType || 'feature';
+
+          if (raw.includes('工作情况') || raw.includes('工作')) {
+            panelType = 'work';
+          } else if (raw.includes('模型接入') || raw.includes('模型')) {
+            panelType = 'model';
+          } else if (raw.includes('提示词')) {
+            panelType = 'prompt';
+          }
+
+          const result = tools.openOrgNodePanel(lastName, panelType);
+          if (!result.success) {
+            return `刚才记录的构建单位「${lastName}」目前无法再次打开，可能是当前页面不支持该功能。`;
+          }
+
+          const panelNames = {
+            feature: '功能面板',
+            work: '工作情况',
+            model: '模型接入',
+            prompt: '提示词'
+          };
+          const panelName = panelType ? panelNames[panelType] : '悬浮菜单';
+          return `好的，正在为您再次打开「${lastName}」的${panelName}。`;
+        }
+      }
+    ];
+
+    // 依次尝试 skills（优先级按数组顺序）
+    for (const skill of skills) {
+      try {
+        if (skill.match && skill.run && skill.match(command, cmd)) {
+          const reply = skill.run(command, cmd);
+          if (typeof reply === 'string' && reply.length > 0) {
+            return reply;
+          }
+        }
+      } catch (e) {
+        console.warn(`技能 "${skill.name}" 执行出错:`, e);
+      }
+    }
 
     // 员工管理相关
     if (cmd.includes('添加') && cmd.includes('员工')) {
@@ -469,6 +882,84 @@ class DiscAssistant {
     if (cmd.includes('编辑') || cmd.includes('修改')) {
       return '点击员工列表中的"编辑"按钮，即可修改员工信息。';
     }
+
+    // 打开构建单位悬浮窗功能 - 放在"部门"检查之前，避免被部门规则拦截
+    // 优先检查是否包含这些关键词（用原始 command 检查，因为中文 toLowerCase 不变）
+    const hasOpen = command.includes('打开') || command.includes('查看');
+    const hasWork = command.includes('工作情况') || command.includes('工作') || command.includes('情况');
+    const hasFeature = command.includes('悬浮窗') || command.includes('菜单') || command.includes('详细') || command.includes('功能');
+    const hasModel = command.includes('模型接入') || command.includes('模型');
+    const hasPrompt = command.includes('提示词');
+    
+    if (hasOpen || hasWork || hasFeature || hasModel || hasPrompt) {
+      // 判断要打开什么类型的面板
+      let panelType = false;
+      if (hasWork) {
+        panelType = 'work';
+      } else if (hasFeature) {
+        panelType = 'feature';
+      } else if (hasModel) {
+        panelType = 'model';
+      } else if (hasPrompt) {
+        panelType = 'prompt';
+      } else if (hasOpen) {
+        panelType = 'feature';
+      }
+      
+      let nodeName = '';
+      
+      // 先去掉"打开"、"查看"等开头词
+      let cleanCmd = command;
+      if (cleanCmd.startsWith('打开')) {
+        cleanCmd = cleanCmd.substring(2);
+      } else if (cleanCmd.startsWith('查看')) {
+        cleanCmd = cleanCmd.substring(2);
+      }
+      
+      // 去掉末尾的"工作情况"、"工作"等
+      if (cleanCmd.endsWith('工作情况')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 4);
+      } else if (cleanCmd.endsWith('工作')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+      } else if (cleanCmd.endsWith('情况')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+      } else if (cleanCmd.endsWith('悬浮窗')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 3);
+      } else if (cleanCmd.endsWith('菜单')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+      } else if (cleanCmd.endsWith('功能')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+      } else if (cleanCmd.endsWith('模型接入')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 4);
+      } else if (cleanCmd.endsWith('模型')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 2);
+      } else if (cleanCmd.endsWith('提示词')) {
+        nodeName = cleanCmd.substring(0, cleanCmd.length - 3);
+      }
+      
+      nodeName = nodeName.trim();
+      
+      if (nodeName && nodeName.length > 0) {
+        if (window.openOrgNodeHoverMenuByName) {
+          const success = window.openOrgNodeHoverMenuByName(nodeName, panelType);
+          if (success) {
+            const panelNames = {
+              'feature': '功能面板',
+              'work': '工作情况',
+              'model': '模型接入',
+              'prompt': '提示词'
+            };
+            const panelName = panelType ? panelNames[panelType] : '悬浮菜单';
+            return `正在为您打开「${nodeName}」的${panelName}，请稍候...`;
+          } else {
+            return `抱歉，未找到名为「${nodeName}」的构建单位。请尝试说出完整的部门或员工名称，例如"打开财务部工作情况"。`;
+          }
+        } else {
+          return '抱歉，当前页面不支持打开悬浮窗功能。';
+        }
+      }
+    }
+
     if (cmd.includes('架构') || cmd.includes('结构') || cmd.includes('组织')) {
       return '左侧画布展示了公司组织架构图，您可以拖动查看不同部门的关系。';
     }
@@ -478,6 +969,7 @@ class DiscAssistant {
         : ['董事会', '总经理办公室', '项目部', '宣传部', '程序部', '市场部', '人事部', '财务部', '运营部'];
       return `公司目前的部门包括：${depts.join('、')}。`;
     }
+
     if (cmd.includes('职位') || cmd.includes('岗位')) {
       const roles = (window.EMP_ROLES && window.EMP_ROLES.length)
         ? window.EMP_ROLES
@@ -487,7 +979,7 @@ class DiscAssistant {
 
     // 系统功能
     if (cmd.includes('帮助') || cmd.includes('怎么用')) {
-      return '我可以帮您：1.添加/编辑员工（不会自动出现在左侧架构图里，当前不支持删除） 2.查看组织架构 3.筛选员工列表 4.回答系统使用问题。说出"添加员工"或"查看架构"来开始。';
+      return '我可以帮您：1.添加/编辑员工 2.查看组织架构 3.筛选员工列表 4.打开构建单位悬浮窗（说"打开XXX悬浮窗"） 5.回答系统使用问题。说出"添加员工"或"打开财务部悬浮窗"来开始。';
     }
     if (cmd.includes('你好') || cmd.includes('您好')) {
       return '你好！很高兴为您服务，有什么我可以帮您的吗？';

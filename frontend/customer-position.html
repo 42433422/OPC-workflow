@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>账号定位&服务周期确认 - 客户数据中心</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+      color: #e6edf3;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* 头部 */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #30363d;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title h1 {
+      font-size: 24px;
+      color: #58a6ff;
+    }
+
+    .header-title p {
+      color: #8b949e;
+      font-size: 14px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* 统计卡片 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: rgba(22, 27, 34, 0.8);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .stat-icon.blue { background: rgba(88, 166, 255, 0.2); color: #58a6ff; }
+    .stat-icon.green { background: rgba(35, 197, 94, 0.2); color: #23c55e; }
+    .stat-icon.orange { background: rgba(240, 136, 62, 0.2); color: #f0883e; }
+    .stat-icon.purple { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+
+    .stat-info h3 {
+      font-size: 14px;
+      color: #8b949e;
+      margin-bottom: 4px;
+    }
+
+    .stat-info .number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #e6edf3;
+    }
+
+    /* 筛选栏 */
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+      max-width: 400px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: rgba(22, 27, 34, 0.8);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 14px;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8b949e;
+    }
+
+    .filter-select {
+      padding: 10px 16px;
+      background: rgba(22, 27, 34, 0.8);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    /* 按钮 */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #79b8ff 0%, #388bfd 100%);
+    }
+
+    .btn-secondary {
+      background: rgba(48, 54, 61, 0.8);
+      color: #e6edf3;
+      border: 1px solid #30363d;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(48, 54, 61, 1);
+    }
+
+    .btn-danger {
+      background: rgba(248, 81, 73, 0.2);
+      color: #f85149;
+      border: 1px solid rgba(248, 81, 73, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(248, 81, 73, 0.3);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* 客户列表 */
+    .customer-list {
+      background: rgba(22, 27, 34, 0.6);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .list-header {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 120px;
+      gap: 16px;
+      padding: 16px 20px;
+      background: rgba(13, 17, 23, 0.8);
+      border-bottom: 1px solid #30363d;
+      font-weight: 600;
+      color: #8b949e;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .customer-item {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 120px;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid #30363d;
+      align-items: center;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .customer-item:hover {
+      background: rgba(48, 54, 61, 0.3);
+    }
+
+    .customer-item:last-child {
+      border-bottom: none;
+    }
+
+    .customer-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .customer-name {
+      font-weight: 600;
+      color: #e6edf3;
+      font-size: 15px;
+    }
+
+    .customer-meta {
+      color: #8b949e;
+      font-size: 12px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-pending {
+      background: rgba(240, 136, 62, 0.2);
+      color: #f0883e;
+    }
+
+    .status-confirmed {
+      background: rgba(88, 166, 255, 0.2);
+      color: #58a6ff;
+    }
+
+    .status-in_progress {
+      background: rgba(139, 92, 246, 0.2);
+      color: #8b5cf6;
+    }
+
+    .status-completed {
+      background: rgba(35, 197, 94, 0.2);
+      color: #23c55e;
+    }
+
+    .customer-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8b949e;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* 模态框 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .modal-header h2 {
+      font-size: 18px;
+      color: #e6edf3;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #8b949e;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .modal-close:hover {
+      color: #e6edf3;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px;
+      border-top: 1px solid #30363d;
+    }
+
+    /* 表单样式 */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-label {
+      font-size: 14px;
+      color: #c9d1d9;
+      font-weight: 500;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      padding: 10px 14px;
+      background: rgba(13, 17, 23, 0.8);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 14px;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    .form-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .info-section {
+      margin-bottom: 24px;
+    }
+
+    .info-section h3 {
+      font-size: 14px;
+      color: #f0883e;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: #8b949e;
+    }
+
+    .info-value {
+      font-size: 14px;
+      color: #e6edf3;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      padding: 4px 10px;
+      background: rgba(88, 166, 255, 0.15);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 4px;
+      font-size: 12px;
+      color: #58a6ff;
+    }
+
+    /* 加载状态 */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #8b949e;
+    }
+
+    .loading i {
+      font-size: 32px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* 响应式 */
+    @media (max-width: 1024px) {
+      .list-header,
+      .customer-item {
+        grid-template-columns: 2fr 1fr 1fr 100px;
+      }
+
+      .list-header > :nth-child(3),
+      .customer-item > :nth-child(4) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .list-header,
+      .customer-item {
+        grid-template-columns: 2fr 1fr 100px;
+      }
+
+      .list-header > :nth-child(2),
+      .customer-item > :nth-child(3) {
+        display: none;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="header-title">
+        <i class="ph ph-users" style="font-size: 32px; color: #58a6ff;"></i>
+        <div>
+          <h1>账号定位&服务周期确认</h1>
+          <p>客户数据中心 - 管理所有客户需求和账号定位信息</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+          <i class="ph ph-arrow-left"></i>
+          返回系统
+        </button>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <i class="ph ph-plus"></i>
+          新增客户
+        </button>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">
+          <i class="ph ph-users"></i>
+        </div>
+        <div class="stat-info">
+          <h3>总客户数</h3>
+          <div class="number" id="stat-total">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">
+          <i class="ph ph-clock"></i>
+        </div>
+        <div class="stat-info">
+          <h3>待确认</h3>
+          <div class="number" id="stat-pending">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">
+          <i class="ph ph-spinner"></i>
+        </div>
+        <div class="stat-info">
+          <h3>服务中</h3>
+          <div class="number" id="stat-inprogress">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">
+          <i class="ph ph-check-circle"></i>
+        </div>
+        <div class="stat-info">
+          <h3>已完成</h3>
+          <div class="number" id="stat-completed">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <i class="ph ph-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="搜索品牌名、行业、联系人..." oninput="handleSearch()">
+      </div>
+      <select class="filter-select" id="industryFilter" onchange="handleFilter()">
+        <option value="">所有行业</option>
+        <option value="餐饮">餐饮</option>
+        <option value="零售">零售</option>
+        <option value="教育">教育</option>
+        <option value="医疗">医疗</option>
+        <option value="科技">科技</option>
+        <option value="娱乐">娱乐</option>
+        <option value="其他">其他</option>
+      </select>
+      <select class="filter-select" id="statusFilter" onchange="handleFilter()">
+        <option value="">所有状态</option>
+        <option value="pending">待确认</option>
+        <option value="confirmed">已确认</option>
+        <option value="in_progress">服务中</option>
+        <option value="completed">已完成</option>
+      </select>
+      <button class="btn btn-secondary" onclick="loadCustomers()">
+        <i class="ph ph-arrows-clockwise"></i>
+        刷新
+      </button>
+    </div>
+
+    <!-- 客户列表 -->
+    <div class="customer-list">
+      <div class="list-header">
+        <div>客户信息</div>
+        <div>行业</div>
+        <div>服务周期</div>
+        <div>创建时间</div>
+        <div>状态</div>
+        <div>操作</div>
+      </div>
+      <div id="customerListBody">
+        <div class="loading">
+          <i class="ph ph-spinner"></i>
+          <p>加载中...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 客户详情/编辑模态框 -->
+  <div class="modal-overlay" id="customerModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">客户详情</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- 动态内容 -->
+      </div>
+      <div class="modal-footer" id="modalFooter">
+        <!-- 动态按钮 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局状态
+    let customers = [];
+    let currentCustomer = null;
+    let isEditMode = false;
+
+    // 状态映射
+    const statusMap = {
+      pending: { label: '待确认', class: 'status-pending' },
+      confirmed: { label: '已确认', class: 'status-confirmed' },
+      in_progress: { label: '服务中', class: 'status-in_progress' },
+      completed: { label: '已完成', class: 'status-completed' }
+    };
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCustomers();
+    });
+
+    // 加载客户列表
+    async function loadCustomers() {
+      try {
+        const response = await fetch('/api/customers');
+        const result = await response.json();
+        if (!response.ok || result.success === false) {
+          const msg = result && result.error && result.error.message ? result.error.message : '加载失败';
+          throw new Error(msg);
+        }
+        customers = Array.isArray(result.data) ? result.data : [];
+        renderCustomerList(customers);
+        updateStats();
+      } catch (error) {
+        console.error('加载客户列表失败:', error);
+        document.getElementById('customerListBody').innerHTML = `
+          <div class="empty-state">
+            <i class="ph ph-warning-circle"></i>
+            <p>加载失败，请稍后重试</p>
+          </div>
+        `;
+      }
+    }
+
+    // 渲染客户列表
+    function renderCustomerList(data) {
+      const container = document.getElementById('customerListBody');
+      
+      if (data.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="ph ph-users"></i>
+            <p>暂无客户数据</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = data.map(customer => {
+        const status = statusMap[customer.status] || statusMap.pending;
+        return `
+          <div class="customer-item" onclick="viewCustomer(${customer.id})">
+            <div class="customer-info">
+              <div class="customer-name">${customer.brandName || '未命名'}</div>
+              <div class="customer-meta">${customer.contactName || '暂无联系人'} ${customer.contactPhone || ''}</div>
+            </div>
+            <div>${customer.industry || '-'}</div>
+            <div>${customer.term || '-'}</div>
+            <div>${formatDate(customer.createdAt)}</div>
+            <div>
+              <span class="status-badge ${status.class}">
+                <i class="ph ph-circle" style="font-size: 8px;"></i>
+                ${status.label}
+              </span>
+            </div>
+            <div class="customer-actions" onclick="event.stopPropagation()">
+              <button class="btn btn-sm btn-secondary" onclick="editCustomer(${customer.id})">
+                <i class="ph ph-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${customer.id})">
+                <i class="ph ph-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 更新统计
+    function updateStats() {
+      document.getElementById('stat-total').textContent = customers.length;
+      document.getElementById('stat-pending').textContent = customers.filter(c => c.status === 'pending').length;
+      document.getElementById('stat-inprogress').textContent = customers.filter(c => c.status === 'in_progress').length;
+      document.getElementById('stat-completed').textContent = customers.filter(c => c.status === 'completed').length;
+    }
+
+    // 搜索功能
+    function handleSearch() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = customers.filter(c => 
+        (c.brandName && c.brandName.toLowerCase().includes(term)) ||
+        (c.industry && c.industry.toLowerCase().includes(term)) ||
+        (c.contactName && c.contactName.toLowerCase().includes(term)) ||
+        (c.contactPhone && c.contactPhone.includes(term))
+      );
+      renderCustomerList(filtered);
+    }
+
+    // 筛选功能
+    function handleFilter() {
+      const industry = document.getElementById('industryFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      
+      let filtered = customers;
+      
+      if (industry) {
+        filtered = filtered.filter(c => c.industry === industry);
+      }
+      
+      if (status) {
+        filtered = filtered.filter(c => c.status === status);
+      }
+      
+      renderCustomerList(filtered);
+    }
+
+    // 查看客户详情
+    async function viewCustomer(id) {
+      try {
+        const response = await fetch(`/api/customers/${id}`);
+        const result = await response.json();
+        if (!response.ok || result.success === false) {
+          const msg = result && result.error && result.error.message ? result.error.message : '加载客户详情失败';
+          throw new Error(msg);
+        }
+        currentCustomer = result.data || null;
+        isEditMode = false;
+        renderCustomerDetail();
+        openModal();
+      } catch (error) {
+        console.error('加载客户详情失败:', error);
+        alert('加载客户详情失败');
+      }
+    }
+
+    // 渲染客户详情
+    function renderCustomerDetail() {
+      const c = currentCustomer;
+      document.getElementById('modalTitle').textContent = '客户详情';
+      
+      document.getElementById('modalBody').innerHTML = `
+        <div class="info-section">
+          <h3>基本信息</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">品牌名称</div>
+              <div class="info-value">${c.brandName || '-'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">行业</div>
+              <div class="info-value">${c.industry || '-'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">地址</div>
+              <div class="info-value">${c.address || '-'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">账号信息</div>
+              <div class="info-value">${c.accountInfo || '-'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3>联系信息</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">联系人</div>
+              <div class="info-value">${c.contactName || '-'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">联系电话</div>
+              <div class="info-value">${c.contactPhone || '-'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">微信号</div>
+              <div class="info-value">${c.contactWechat || '-'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3>视频需求</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">视频用途</div>
+              <div class="tag-list">
+                ${(c.videoPurpose || []).map(p => `<span class="tag">${p}</span>`).join('') || '<span class="info-value">-</span>'}
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">预期时长</div>
+              <div class="info-value">${c.duration || '-'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">创新度</div>
+              <div class="info-value">${c.innovation || '-'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">预算</div>
+              <div class="info-value">${c.budget || '-'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3>账号定位</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">账号定位</div>
+              <div class="info-value">${c.accountPosition || '待补充'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">内容风格</div>
+              <div class="info-value">${c.contentStyle || '待补充'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">服务周期</div>
+              <div class="info-value">${c.serviceCycle || c.term || '待补充'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">阶段目标</div>
+              <div class="info-value">${c.goals || '待补充'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3>其他信息</h3>
+          <div class="info-grid">
+            <div class="info-item full-width">
+              <div class="info-label">用户需求</div>
+              <div class="info-value">${c.userRequirements || '-'}</div>
+            </div>
+            <div class="info-item full-width">
+              <div class="info-label">特色亮点</div>
+              <div class="info-value">${c.highlights || '-'}</div>
+            </div>
+            <div class="info-item full-width">
+              <div class="info-label">备注</div>
+              <div class="info-value">${c.other || '-'}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const status = statusMap[c.status] || statusMap.pending;
+      document.getElementById('modalFooter').innerHTML = `
+        <span class="status-badge ${status.class}" style="margin-right: auto;">
+          ${status.label}
+        </span>
+        <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+        <button class="btn btn-primary" onclick="enableEditMode()">编辑</button>
+      `;
+    }
+
+    // 启用编辑模式
+    function enableEditMode() {
+      isEditMode = true;
+      renderEditForm();
+    }
+
+    // 渲染编辑表单
+    function renderEditForm() {
+      const c = currentCustomer;
+      document.getElementById('modalTitle').textContent = '编辑客户信息';
+      
+      document.getElementById('modalBody').innerHTML = `
+        <div class="info-section">
+          <h3>账号定位信息</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">账号定位</label>
+              <input type="text" class="form-input" id="edit-accountPosition" value="${c.accountPosition || ''}" placeholder="例如：美食探店达人">
+            </div>
+            <div class="form-group">
+              <label class="form-label">内容风格</label>
+              <input type="text" class="form-input" id="edit-contentStyle" value="${c.contentStyle || ''}" placeholder="例如：轻松幽默、专业严谨">
+            </div>
+            <div class="form-group">
+              <label class="form-label">服务周期</label>
+              <input type="text" class="form-input" id="edit-serviceCycle" value="${c.serviceCycle || ''}" placeholder="例如：3个月">
+            </div>
+            <div class="form-group">
+              <label class="form-label">状态</label>
+              <select class="form-select" id="edit-status">
+                <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>待确认</option>
+                <option value="confirmed" ${c.status === 'confirmed' ? 'selected' : ''}>已确认</option>
+                <option value="in_progress" ${c.status === 'in_progress' ? 'selected' : ''}>服务中</option>
+                <option value="completed" ${c.status === 'completed' ? 'selected' : ''}>已完成</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">阶段目标</label>
+              <textarea class="form-textarea" id="edit-goals" placeholder="描述阶段性运营目标">${c.goals || ''}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3>基本信息</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">品牌名称</label>
+              <input type="text" class="form-input" id="edit-brandName" value="${c.brandName || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">行业</label>
+              <input type="text" class="form-input" id="edit-industry" value="${c.industry || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">联系人</label>
+              <input type="text" class="form-input" id="edit-contactName" value="${c.contactName || ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">联系电话</label>
+              <input type="text" class="form-input" id="edit-contactPhone" value="${c.contactPhone || ''}">
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modalFooter').innerHTML = `
+        <button class="btn btn-secondary" onclick="renderCustomerDetail()">取消</button>
+        <button class="btn btn-primary" onclick="saveCustomer()">保存</button>
+      `;
+    }
+
+    // 保存客户
+    async function saveCustomer() {
+      const data = {
+        accountPosition: document.getElementById('edit-accountPosition').value,
+        contentStyle: document.getElementById('edit-contentStyle').value,
+        serviceCycle: document.getElementById('edit-serviceCycle').value,
+        goals: document.getElementById('edit-goals').value,
+        status: document.getElementById('edit-status').value,
+        brandName: document.getElementById('edit-brandName').value,
+        industry: document.getElementById('edit-industry').value,
+        contactName: document.getElementById('edit-contactName').value,
+        contactPhone: document.getElementById('edit-contactPhone').value
+      };
+
+      try {
+        const response = await fetch(`/api/customers/${currentCustomer.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok && result && result.success !== false) {
+          currentCustomer = result.data || null;
+          loadCustomers();
+          renderCustomerDetail();
+          alert('保存成功！');
+        } else {
+          const msg = result && result.error && result.error.message ? result.error.message : '保存失败';
+          throw new Error(msg);
+        }
+      } catch (error) {
+        console.error('保存客户失败:', error);
+        alert('保存失败，请重试');
+      }
+    }
+
+    // 编辑客户
+    async function editCustomer(id) {
+      await viewCustomer(id);
+      enableEditMode();
+    }
+
+    // 删除客户
+    async function deleteCustomer(id) {
+      if (!confirm('确定要删除这个客户吗？此操作不可恢复。')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/customers/${id}`, {
+          method: 'DELETE'
+        });
+
+        const result = await response.json();
+        if (response.ok && result && result.success !== false) {
+          loadCustomers();
+          alert('删除成功！');
+        } else {
+          const msg = result && result.error && result.error.message ? result.error.message : '删除失败';
+          throw new Error(msg);
+        }
+      } catch (error) {
+        console.error('删除客户失败:', error);
+        alert('删除失败，请重试');
+      }
+    }
+
+    // 打开新增模态框
+    function openAddModal() {
+      currentCustomer = null;
+      isEditMode = true;
+      document.getElementById('modalTitle').textContent = '新增客户';
+      
+      document.getElementById('modalBody').innerHTML = `
+        <div class="info-section">
+          <h3>基本信息（必填）</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">品牌名称 *</label>
+              <input type="text" class="form-input" id="new-brandName" placeholder="输入品牌名称">
+            </div>
+            <div class="form-group">
+              <label class="form-label">行业</label>
+              <select class="form-select" id="new-industry">
+                <option value="">请选择</option>
+                <option value="餐饮">餐饮</option>
+                <option value="零售">零售</option>
+                <option value="教育">教育</option>
+                <option value="医疗">医疗</option>
+                <option value="科技">科技</option>
+                <option value="娱乐">娱乐</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">联系人</label>
+              <input type="text" class="form-input" id="new-contactName" placeholder="输入联系人姓名">
+            </div>
+            <div class="form-group">
+              <label class="form-label">联系电话</label>
+              <input type="text" class="form-input" id="new-contactPhone" placeholder="输入联系电话">
+            </div>
+            <div class="form-group">
+              <label class="form-label">微信号</label>
+              <input type="text" class="form-input" id="new-contactWechat" placeholder="输入微信号">
+            </div>
+            <div class="form-group">
+              <label class="form-label">服务周期</label>
+              <select class="form-select" id="new-term">
+                <option value="">请选择</option>
+                <option value="1个月">1个月</option>
+                <option value="3个月">3个月</option>
+                <option value="6个月">6个月</option>
+                <option value="1年">1年</option>
+                <option value="长期合作">长期合作</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modalFooter').innerHTML = `
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="createCustomer()">创建</button>
+      `;
+
+      openModal();
+    }
+
+    // 创建客户
+    async function createCustomer() {
+      const brandName = document.getElementById('new-brandName').value;
+      if (!brandName) {
+        alert('品牌名称不能为空');
+        return;
+      }
+
+      const data = {
+        brandName: brandName,
+        industry: document.getElementById('new-industry').value,
+        contactName: document.getElementById('new-contactName').value,
+        contactPhone: document.getElementById('new-contactPhone').value,
+        contactWechat: document.getElementById('new-contactWechat').value,
+        term: document.getElementById('new-term').value,
+        status: 'pending'
+      };
+
+      try {
+        const response = await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok && result && result.success !== false) {
+          closeModal();
+          loadCustomers();
+          alert('客户创建成功！');
+        } else {
+          const msg = result && result.error && result.error.message ? result.error.message : '创建失败';
+          throw new Error(msg);
+        }
+      } catch (error) {
+        console.error('创建客户失败:', error);
+        alert('创建失败: ' + error.message);
+      }
+    }
+
+    // 模态框控制
+    function openModal() {
+      document.getElementById('customerModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('customerModal').classList.remove('active');
+      document.body.style.overflow = '';
+      currentCustomer = null;
+      isEditMode = false;
+    }
+
+    // 点击遮罩关闭
+    document.getElementById('customerModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeModal();
+      }
+    });
+
+    // 格式化日期
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN');
+    }
+  </script>
+</body>
+</html>

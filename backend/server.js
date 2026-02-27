@@ -6,6 +6,40 @@ const os = require('os');
 const XLSX = require('xlsx');
 const nodeFetch = require('node-fetch');
 const fetch = nodeFetch;
+const { spawn } = require('child_process');
+
+// 新模块导入
+const { authMiddleware, verifyUser, createSession } = require('./middleware/auth');
+const { validators, sanitizeObject } = require('./utils/validator');
+const logger = require('./utils/logger');
+const {
+  loadEmployeeDb,
+  saveEmployeeDb,
+  loadDeptDb,
+  saveDeptDb,
+  loadCustomersDb,
+  saveCustomersDb,
+  loadVoiceProfiles,
+  saveVoiceProfiles,
+  createEmployeeFolder,
+  initDeptReportDirs
+} = require('./utils/db');
+
+// 路由模块
+const { handleChat } = require('./src/routes/ai-chat');
+const { handleAssistant } = require('./src/routes/assistant');
+const {
+  handleUsageReport,
+  handleUsageRecords,
+  handleUsageReportDoc,
+  handleUsageReportXlsx
+} = require('./src/routes/reports');
+const {
+  handleGetEmployees,
+  handleCreateEmployee,
+  handleUpdateEmployee,
+  handleDeleteEmployee
+} = require('./routes/employees');
 
 // 数据存储路径（简单文件数据库）
 const dataDir = path.join(__dirname, 'data');
@@ -13,6 +47,13 @@ const employeeFile = path.join(dataDir, 'employees.json');
 const deptFile = path.join(dataDir, 'departments.json');
 const usageFile = path.join(dataDir, 'usage.json');
 const deptReportRootDir = path.join(dataDir, 'dept-reports');
+const voiceProfilesFile = path.join(dataDir, 'voices.json');
+const customersFile = path.join(dataDir, 'customers.json');
+
+// GPT-SoVITS 根目录（用于存放语音数据集和触发训练脚本）
+// 默认按当前项目结构推断：backend 上一级目录下的 GPT-SoVITS-beta0706
+const gptSoVitsRoot = path.join(__dirname, '..', 'GPT-SoVITS-beta0706');
+const voiceDatasetRoot = path.join(gptSoVitsRoot, 'dataset');
 
 // 确保数据目录存在
 if (!fs.existsSync(dataDir)) {
@@ -23,98 +64,138 @@ if (!fs.existsSync(deptReportRootDir)) {
   fs.mkdirSync(deptReportRootDir, { recursive: true });
 }
 
-// 读写员工"数据库"
-function loadEmployeeDb() {
-  if (!fs.existsSync(employeeFile)) {
-    return { nextId: 1, employees: [] };
+// 员工文件夹根目录
+const employeeFoldersDir = path.join(dataDir, 'employee-folders');
+if (!fs.existsSync(employeeFoldersDir)) {
+  fs.mkdirSync(employeeFoldersDir, { recursive: true });
+}
+
+// 语音数据集根目录（如果 GPT-SoVITS 存在，则准备好 dataset 目录）
+if (fs.existsSync(gptSoVitsRoot)) {
+  if (!fs.existsSync(voiceDatasetRoot)) {
+    try {
+      fs.mkdirSync(voiceDatasetRoot, { recursive: true });
+    } catch (e) {
+      console.error('创建语音数据集目录失败:', voiceDatasetRoot, e);
+    }
   }
+}
+
+
+
+// 多实例 TTS 映射：按语言路由到不同的 GPT-SoVITS api.py 端口
+const TTS_INSTANCES = {
+  zh: 'http://127.0.0.1:9880',
+  en: 'http://127.0.0.1:9881',
+  ja: 'http://127.0.0.1:9880', // 暂时复用中文实例，后续可以单独开日文实例
+};
+
+// ===================== GPT-SoVITS TTS 自启动辅助 =====================
+let gptTtsStarting = false;
+
+// 确保 GPT-SoVITS 的 api.py 正在本机运行（如果没跑则尝试后台自启动）
+function ensureGptTtsServer() {
+  if (!fs.existsSync(gptSoVitsRoot)) {
+    console.warn('未找到 GPT-SoVITS 根目录，无法自启动 api.py:', gptSoVitsRoot);
+    return;
+  }
+  if (gptTtsStarting) {
+    // 已经在拉起过程中，避免重复 spawn
+    return;
+  }
+  gptTtsStarting = true;
   try {
-    const raw = fs.readFileSync(employeeFile, 'utf-8');
-    const parsed = JSON.parse(raw);
-    return {
-      nextId: parsed.nextId || 1,
-      employees: Array.isArray(parsed.employees) ? parsed.employees : []
-    };
+    console.log('尝试自动启动 GPT-SoVITS TTS 服务: python api.py');
+    const py = spawn('python', ['api.py'], {
+      cwd: gptSoVitsRoot,
+      stdio: 'ignore',
+      detached: true
+    });
+    py.unref();
   } catch (e) {
-    console.error('读取员工数据库失败，重置为空:', e);
-    return { nextId: 1, employees: [] };
+    console.error('自动启动 GPT-SoVITS TTS 服务失败:', e);
+  } finally {
+    // 稍后再允许下一次检测
+    setTimeout(() => {
+      gptTtsStarting = false;
+    }, 10000);
   }
 }
 
-function saveEmployeeDb(db) {
-  fs.writeFileSync(employeeFile, JSON.stringify(db, null, 2) + os.EOL, 'utf-8');
-}
-
-// 读写部门"数据库"
-function loadDeptDb() {
-  if (!fs.existsSync(deptFile)) {
-    return {
-      nextId: 1,
-      departments: [
-        { id: 1, name: '董事会', code: 'BOARD', note: '公司最高决策层' },
-        { id: 2, name: '总经理办公室', code: 'CEO_OFFICE', note: '协调公司整体运营' },
-        { id: 3, name: '项目部', code: 'PROJECT', note: '负责各类项目推进' },
-        { id: 4, name: '宣传部', code: 'MARKETING', note: '品牌宣传与市场活动' },
-        { id: 5, name: '程序部', code: 'DEV', note: '前端 / 后端 / 技术开发' },
-        { id: 6, name: '市场部', code: 'SALES', note: '销售与市场拓展' },
-        { id: 7, name: '人事部', code: 'HR', note: '招聘与员工管理' },
-        { id: 8, name: '财务部', code: 'FIN', note: '财务与成本控制' },
-        { id: 9, name: '运营部', code: 'OPS', note: '日常运营与维护' }
-      ]
-    };
-  }
+// 触发 GPT-SoVITS 侧的异步预处理 / 训练流水线（如果脚本存在）
+function triggerVoicePipeline(speakerId, lang) {
   try {
-    const raw = fs.readFileSync(deptFile, 'utf-8');
-    const parsed = JSON.parse(raw);
-    return {
-      nextId: parsed.nextId || (Array.isArray(parsed.departments) ? parsed.departments.length + 1 : 1),
-      departments: Array.isArray(parsed.departments) ? parsed.departments : []
-    };
+    if (!fs.existsSync(gptSoVitsRoot)) {
+      console.warn('未找到 GPT-SoVITS 根目录，跳过自动训练触发:', gptSoVitsRoot);
+      return;
+    }
+    const scriptPath = path.join(gptSoVitsRoot, 'auto_voice_train.py');
+    if (!fs.existsSync(scriptPath)) {
+      console.warn('未找到 auto_voice_train.py 脚本，只执行数据落地，不自动训练:', scriptPath);
+      return;
+    }
+    const args = ['auto_voice_train.py', '--speaker', speakerId];
+    if (lang) {
+      args.push('--lang', lang);
+    }
+    const py = spawn('python', args, {
+      cwd: gptSoVitsRoot,
+      stdio: 'ignore',
+      detached: true
+    });
+    py.unref();
+    console.log(`已异步触发声音流水线: speaker=${speakerId}, lang=${lang || 'unknown'}`);
   } catch (e) {
-    console.error('读取部门数据库失败，重置为空:', e);
-    return { nextId: 1, departments: [] };
+    console.error('触发声音流水线失败:', e);
   }
 }
 
-function saveDeptDb(db) {
-  fs.writeFileSync(deptFile, JSON.stringify(db, null, 2) + os.EOL, 'utf-8');
-}
-
-// 为每个部门准备一个对应的报表文件夹（示例：财务部 / 程序部 / 市场部等）
-function initDeptReportDirs() {
-  const db = loadDeptDb();
-  (db.departments || []).forEach((dept) => {
-    if (!dept || !dept.name) return;
-    const dir = path.join(deptReportRootDir, dept.name);
-    if (!fs.existsSync(dir)) {
-      try {
-        fs.mkdirSync(dir, { recursive: true });
-      } catch (e) {
-        console.error('创建部门报表文件夹失败:', dept.name, e);
+// 登录处理函数
+function handleLogin(req, res) {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', () => {
+    try {
+      const { username, password } = JSON.parse(body);
+      const user = verifyUser(username, password);
+      
+      if (!user) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: '用户名或密码错误' }));
+        logger.warn('登录失败', { username, ip: req.connection.remoteAddress });
+        return;
       }
+      
+      const token = createSession(user);
+      logger.info('登录成功', { username, userId: user.id });
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          role: user.role
+        }
+      }));
+    } catch (e) {
+      logger.error('登录处理错误', { error: e.message });
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: '无效的请求数据' }));
     }
   });
 }
 
-// 读写模型调用用量 / 费用数据库
-function loadUsageDb() {
-  if (!fs.existsSync(usageFile)) {
-    return { records: [] };
-  }
-  try {
-    const raw = fs.readFileSync(usageFile, 'utf-8');
-    const parsed = JSON.parse(raw);
-    return {
-      records: Array.isArray(parsed.records) ? parsed.records : []
-    };
-  } catch (e) {
-    console.error('读取用量数据库失败，重置为空:', e);
-    return { records: [] };
-  }
-}
-
-function saveUsageDb(db) {
-  fs.writeFileSync(usageFile, JSON.stringify(db, null, 2) + os.EOL, 'utf-8');
+// 健康检查
+function handleHealth(req, res) {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  }));
 }
 
 // 简单的路由处理
@@ -126,7 +207,7 @@ const server = http.createServer(async (req, res) => {
   // 设置 CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (method === 'OPTIONS') {
     res.writeHead(200);
@@ -134,9 +215,35 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 请求日志
+  logger.requestLogger(req, res, () => {});
+
+  // 公开路由（不需要认证）
+  if (pathname === '/api/login' && method === 'POST') {
+    return handleLogin(req, res);
+  }
+
+  if (pathname === '/api/health' && method === 'GET') {
+    return handleHealth(req, res);
+  }
+
+  // 认证中间件（除了公开路由）
+  const isPublicRoute = pathname === '/api/login' || pathname === '/api/health';
+  if (!isPublicRoute && pathname.startsWith('/api/')) {
+    const authResult = await new Promise((resolve) => {
+      authMiddleware(req, res, () => resolve(true));
+    });
+    if (!authResult) return;
+  }
+
   // API 路由
   if (pathname === '/api/chat' && method === 'POST') {
     await handleChat(req, res);
+    return;
+  }
+
+  if (pathname === '/api/assistant' && method === 'POST') {
+    await handleAssistant(req, res);
     return;
   }
 
@@ -165,8 +272,17 @@ const server = http.createServer(async (req, res) => {
     return handleUsageReportXlsx(req, res);
   }
 
-  if (pathname === '/api/usage-records' && method === 'GET') {
-    return handleUsageRecords(req, res);
+  // 声音模型 / 语音数据集 API
+  if (pathname === '/api/tts' && method === 'POST') {
+    return handleTts(req, res);
+  }
+
+  if (pathname === '/api/voices' && method === 'GET') {
+    return handleGetVoices(req, res);
+  }
+
+  if (pathname === '/api/voice-dataset' && method === 'POST') {
+    return handleUploadVoiceDataset(req, res);
   }
 
   // 员工数据库 API
@@ -220,158 +336,268 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // 客户数据库 API
+  if (pathname === '/api/customers' && method === 'GET') {
+    return handleGetCustomers(req, res);
+  }
+
+  if (pathname === '/api/customers' && method === 'POST') {
+    return handleCreateCustomer(req, res);
+  }
+
+  if (pathname.startsWith('/api/customers/') && (method === 'GET' || method === 'PUT' || method === 'DELETE')) {
+    const idStr = pathname.replace('/api/customers/', '');
+    const id = parseInt(idStr, 10);
+    if (!Number.isInteger(id)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid customer id' }));
+      return;
+    }
+    if (method === 'GET') {
+      return handleGetCustomerById(req, res, id);
+    }
+    if (method === 'PUT') {
+      return handleUpdateCustomer(req, res, id);
+    }
+    if (method === 'DELETE') {
+      return handleDeleteCustomer(req, res, id);
+    }
+  }
+
   // 静态文件服务
   serveStaticFile(req, res, pathname);
 });
 
-// 各大模型提供商配置（是否必须要 API Key）
-// 如果接入"无需账号/密钥"的免费接口，把 requireKey 设为 false
-const PROVIDER_CONFIG = {
-  qwen: { requireKey: true },
-  deepseek: { requireKey: true },
-  moonshot: { requireKey: true },
-  zhipu: { requireKey: true },
-  // 国外模型
-  openai: { requireKey: true },
-  grok: { requireKey: true },
-  gemini: { requireKey: true }
-  // 示例：接入免 Key 接口
-  // freeai: { requireKey: false, useBackendKey: true }
-};
+const { ok, error } = require('./src/utils/response');
 
-// 处理聊天请求
-async function handleChat(req, res) {
+// 注意：handleGetEmployees 已移至 routes/employees.js
+
+// 声音模型列表
+function handleGetVoices(req, res) {
+  const db = loadVoiceProfiles();
+  return ok(res, db.voices || [], '获取声音模型列表成功');
+}
+
+// 文本转语音（调用 GPT-SoVITS 提供的 api.py HTTP 接口）
+async function handleTts(req, res) {
   let body = '';
-  req.on('data', chunk => body += chunk);
+  req.on('data', (chunk) => (body += chunk));
   req.on('end', async () => {
     try {
-      const { provider, model, messages, apiKey, source } = JSON.parse(body);
-      const providerCfg = PROVIDER_CONFIG[provider] || { requireKey: true };
+      const payload = JSON.parse(body || '{}');
+      const text = (payload.text || '').trim();
+      const lang = (payload.lang || 'zh').toLowerCase();
+      const speakerId = payload.speakerId ? String(payload.speakerId).trim() : '';
 
-      if (!provider || !model || !messages) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing required parameters' }));
-        return;
+      if (!text) {
+        return error(res, 400, 'TEXT_REQUIRED', 'text 为必填');
       }
 
-      // 仅在该渠道要求密钥时强制校验 apiKey
-      if (providerCfg.requireKey && !apiKey) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'API key is required for this provider' }));
-        return;
+      // 如果有指定说话人，并且在 voices.json 中有对应记录，则优先走"直接权重调用"路径
+      if (speakerId) {
+        const vdb = loadVoiceProfiles();
+        const voices = vdb.voices || [];
+        const voice = voices.find((v) => v.speakerId === speakerId);
+
+        if (voice && voice.sovitsPath && voice.gptPath && Array.isArray(voice.lastUploadFiles) && voice.lastUploadFiles.length > 0) {
+          try {
+            const sovitsPath = path.isAbsolute(voice.sovitsPath)
+              ? voice.sovitsPath
+              : path.join(gptSoVitsRoot, voice.sovitsPath);
+            const gptPath = path.isAbsolute(voice.gptPath)
+              ? voice.gptPath
+              : path.join(gptSoVitsRoot, voice.gptPath);
+            const refRel = voice.lastUploadFiles[0];
+            const refWavPath = path.isAbsolute(refRel)
+              ? refRel
+              : path.join(gptSoVitsRoot, refRel);
+
+            const ttsScript = path.join(gptSoVitsRoot, 'tts_once.py');
+            if (!fs.existsSync(ttsScript)) {
+              console.warn('未找到 tts_once.py 脚本，回退到 HTTP TTS:', ttsScript);
+            } else {
+              const args = [
+                ttsScript,
+                '--gpt_path',
+                gptPath,
+                '--sovits_path',
+                sovitsPath,
+                '--ref_wav',
+                refWavPath,
+                '--lang',
+                lang || voice.lang || 'zh',
+                '--text',
+                text,
+              ];
+              const py = spawn('python', args, {
+                cwd: gptSoVitsRoot,
+                stdio: ['ignore', 'pipe', 'pipe'],
+              });
+
+              let stdout = '';
+              let stderr = '';
+              py.stdout.on('data', (chunk) => {
+                stdout += chunk.toString();
+              });
+              py.stderr.on('data', (chunk) => {
+                stderr += chunk.toString();
+              });
+
+              py.on('close', (code) => {
+                if (code !== 0 || !stdout.trim()) {
+                  console.error('tts_once.py 失败:', code, stderr);
+                  return error(res, 500, 'TTS_FAILED', 'tts_once.py 调用失败，请检查后端日志。', { detail: stderr });
+                }
+
+                const base64 = stdout.trim();
+                return ok(res, {
+                  audioBase64: `data:audio/wav;base64,${base64}`,
+                  lang: lang || voice.lang || 'zh',
+                  speakerId,
+                  mode: voice.mode || 'zero-shot',
+                }, 'TTS 成功');
+              });
+
+              return;
+            }
+          } catch (e) {
+            console.error('基于 speakerId 的直接 TTS 调用失败，回退 HTTP 模式:', e);
+          }
+        }
       }
 
-      const result = await callAIModel(provider, model, messages, apiKey, source);
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result));
-    } catch (error) {
-      console.error('Chat error:', error);
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: error.message }));
+      // HTTP 模式：GPT-SoVITS api.py 多实例（按语言路由端口）
+      const textLanguage =
+        lang === 'en' ? 'en' : lang === 'ja' ? 'ja' : lang === 'auto' ? 'auto' : 'zh';
+      const ttsUrl = TTS_INSTANCES[textLanguage] || TTS_INSTANCES.zh || 'http://127.0.0.1:9880';
+
+      const callUpstream = () =>
+        fetch(ttsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text,
+            text_language: textLanguage
+          })
+        });
+
+      let upstream;
+      try {
+        upstream = await callUpstream();
+      } catch (e) {
+        console.warn('首次调用 GPT-SoVITS TTS 失败，尝试自动启动 api.py 后重试:', e.message || e);
+        ensureGptTtsServer();
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        try {
+          upstream = await callUpstream();
+        } catch (e2) {
+          console.error('二次调用 GPT-SoVITS TTS 仍然失败:', e2);
+          return error(res, 502, 'TTS_UNAVAILABLE', '无法连接到 GPT-SoVITS TTS 服务，已尝试自动启动 api.py，请稍后重试或检查本机环境。');
+        }
+      }
+
+      if (!upstream.ok) {
+        let errDetail = '';
+        try {
+          const errJson = await upstream.json();
+          errDetail = errJson && errJson.error ? String(errJson.error) : '';
+        } catch {
+          errDetail = '';
+        }
+        console.error('GPT-SoVITS TTS 返回非 200:', upstream.status, errDetail);
+        return error(res, 500, 'TTS_ERROR', 'GPT-SoVITS TTS 推理失败', { status: upstream.status, detail: errDetail });
+      }
+
+      const buf = await upstream.buffer();
+      const base64 = buf.toString('base64');
+
+      return ok(res, {
+        audioBase64: `data:audio/wav;base64,${base64}`,
+        lang: textLanguage
+      }, 'TTS 成功');
+    } catch (e) {
+      console.error('处理 /api/tts 请求失败:', e);
+      return error(res, 400, 'INVALID_BODY', 'Invalid JSON body');
     }
   });
 }
 
-// 员工列表
-function handleGetEmployees(req, res) {
-  const db = loadEmployeeDb();
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(db.employees));
-}
-
-// 创建员工
-function handleCreateEmployee(req, res) {
+// 上传语音数据集
+function handleUploadVoiceDataset(req, res) {
   let body = '';
-  req.on('data', chunk => body += chunk);
+  req.on('data', chunk => (body += chunk));
   req.on('end', () => {
     try {
       const payload = JSON.parse(body || '{}');
-      const db = loadEmployeeDb();
+      const speakerId = (payload.speakerId || '').trim();
+      const displayName = (payload.displayName || '').trim();
+      const lang = (payload.lang || 'zh').toLowerCase();
+      const ownerType = payload.ownerType || 'custom';
+      const ownerId = payload.ownerId || null;
+      const files = Array.isArray(payload.files) ? payload.files : [];
 
-      const employee = {
-        id: db.nextId++,
-        name: payload.name || '',
-        role: payload.role || '',
-        dept: payload.dept || '',
-        note: payload.note || '',
-        // 预留扩展字段：每个员工独立信息
-        meta: payload.meta || {}
-      };
-
-      db.employees.push(employee);
-      saveEmployeeDb(db);
-
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(employee));
-    } catch (e) {
-      console.error('Create employee error:', e);
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON body' }));
-    }
-  });
-}
-
-// 更新员工
-function handleUpdateEmployee(req, res, id) {
-  let body = '';
-  req.on('data', chunk => body += chunk);
-  req.on('end', () => {
-    try {
-      const payload = JSON.parse(body || '{}');
-      const db = loadEmployeeDb();
-      const idx = db.employees.findIndex(e => e.id === id);
-      if (idx === -1) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Employee not found' }));
-        return;
+      if (!speakerId) {
+        return error(res, 400, 'MISSING_SPEAKER_ID', 'speakerId 为必填');
+      }
+      if (!displayName) {
+        return error(res, 400, 'MISSING_DISPLAY_NAME', 'displayName 为必填');
+      }
+      if (files.length === 0) {
+        return error(res, 400, 'MISSING_FILES', 'files 数组不能为空');
       }
 
-      const old = db.employees[idx];
-      const updated = {
-        ...old,
-        name: payload.name !== undefined ? payload.name : old.name,
-        role: payload.role !== undefined ? payload.role : old.role,
-        dept: payload.dept !== undefined ? payload.dept : old.dept,
-        note: payload.note !== undefined ? payload.note : old.note,
-        meta: payload.meta !== undefined ? payload.meta : (old.meta || {})
+      // 保存上传的文件到 dataset 目录
+      const speakerDir = path.join(voiceDatasetRoot, speakerId);
+      if (!fs.existsSync(speakerDir)) {
+        fs.mkdirSync(speakerDir, { recursive: true });
+      }
+
+      const savedFiles = [];
+      for (const file of files) {
+        if (!file.filename || !file.dataBase64) continue;
+        const filePath = path.join(speakerDir, file.filename);
+        const buffer = Buffer.from(file.dataBase64, 'base64');
+        fs.writeFileSync(filePath, buffer);
+        savedFiles.push(filePath);
+      }
+
+      // 更新 voices.json
+      const vdb = loadVoiceProfiles();
+      const existingIndex = vdb.voices.findIndex((v) => v.speakerId === speakerId);
+      const voiceEntry = {
+        speakerId,
+        displayName,
+        lang,
+        ownerType,
+        ownerId,
+        lastUploadFiles: savedFiles,
+        updatedAt: new Date().toISOString()
       };
 
-      db.employees[idx] = updated;
-      saveEmployeeDb(db);
+      if (existingIndex >= 0) {
+        vdb.voices[existingIndex] = { ...vdb.voices[existingIndex], ...voiceEntry };
+      } else {
+        vdb.voices.push(voiceEntry);
+      }
+      saveVoiceProfiles(vdb);
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(updated));
+      // 异步触发训练流水线
+      triggerVoicePipeline(speakerId, lang);
+
+      return ok(res, { speakerId, savedFiles: savedFiles.length }, '语音数据集上传成功，已触发自动训练');
     } catch (e) {
-      console.error('Update employee error:', e);
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+      console.error('处理 /api/voice-dataset 失败:', e);
+      return error(res, 400, 'INVALID_BODY', 'Invalid JSON body');
     }
   });
 }
 
-// 删除员工
-function handleDeleteEmployee(req, res, id) {
-  const db = loadEmployeeDb();
-  const idx = db.employees.findIndex(e => e.id === id);
-  if (idx === -1) {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Employee not found' }));
-    return;
-  }
-
-  const removed = db.employees.splice(idx, 1)[0];
-  saveEmployeeDb(db);
-
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(removed));
-}
+// 注意：员工相关处理函数已移至 routes/employees.js
 
 // 部门列表
 function handleGetDepts(req, res) {
   const db = loadDeptDb();
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(db.departments));
+  return ok(res, db.departments || [], '获取部门列表成功');
 }
 
 // 创建部门
@@ -387,19 +613,22 @@ function handleCreateDept(req, res) {
         id: db.nextId++,
         name: payload.name || '',
         code: payload.code || '',
-        note: payload.note || '',
-        meta: payload.meta || {}
+        note: payload.note || ''
       };
 
       db.departments.push(dept);
       saveDeptDb(db);
 
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(dept));
+      // 创建部门报表文件夹
+      const dir = path.join(deptReportRootDir, dept.name);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      return ok(res, dept, '创建部门成功', 201);
     } catch (e) {
       console.error('Create department error:', e);
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+      return error(res, 400, 'INVALID_BODY', 'Invalid JSON body');
     }
   });
 }
@@ -414,29 +643,34 @@ function handleUpdateDept(req, res, id) {
       const db = loadDeptDb();
       const idx = db.departments.findIndex(d => d.id === id);
       if (idx === -1) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Department not found' }));
-        return;
+        return error(res, 404, 'DEPT_NOT_FOUND', 'Department not found');
       }
 
       const old = db.departments[idx];
+      const oldName = old.name;
       const updated = {
         ...old,
         name: payload.name !== undefined ? payload.name : old.name,
         code: payload.code !== undefined ? payload.code : old.code,
-        note: payload.note !== undefined ? payload.note : old.note,
-        meta: payload.meta !== undefined ? payload.meta : (old.meta || {})
+        note: payload.note !== undefined ? payload.note : old.note
       };
 
       db.departments[idx] = updated;
       saveDeptDb(db);
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(updated));
+      // 如果部门名称变更，重命名报表文件夹
+      if (oldName && updated.name && oldName !== updated.name) {
+        const oldDir = path.join(deptReportRootDir, oldName);
+        const newDir = path.join(deptReportRootDir, updated.name);
+        if (fs.existsSync(oldDir) && !fs.existsSync(newDir)) {
+          fs.renameSync(oldDir, newDir);
+        }
+      }
+
+      return ok(res, updated, '更新部门成功');
     } catch (e) {
       console.error('Update department error:', e);
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+      return error(res, 400, 'INVALID_BODY', 'Invalid JSON body');
     }
   });
 }
@@ -446,772 +680,307 @@ function handleDeleteDept(req, res, id) {
   const db = loadDeptDb();
   const idx = db.departments.findIndex(d => d.id === id);
   if (idx === -1) {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Department not found' }));
-    return;
+    return error(res, 404, 'DEPT_NOT_FOUND', 'Department not found');
   }
 
   const removed = db.departments.splice(idx, 1)[0];
   saveDeptDb(db);
 
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(removed));
+  return ok(res, removed, '删除部门成功');
 }
 
-// 调用 AI 模型
-async function callAIModel(provider, model, messages, apiKey, source) {
-  const providers = {
-    qwen: {
-      url: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      formatBody: (model, messages) => ({
-        model: model,
-        input: {
-          messages: messages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
-        },
-        parameters: {
-          result_format: 'message'
-        }
-      }),
-      parseResponse: (data) => {
-        if (data.output && data.output.choices && data.output.choices[0]) {
-          return {
-            content: data.output.choices[0].message.content,
-            usage: data.usage
-          };
-        }
-        throw new Error('Invalid response format');
-      }
-    },
-    
-    deepseek: {
-      url: 'https://api.deepseek.com/v1/chat/completions',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      formatBody: (model, messages) => ({
-        model: model,
-        messages: messages,
-        stream: false
-      }),
-      parseResponse: (data) => {
-        if (data.choices && data.choices[0]) {
-          return {
-            content: data.choices[0].message.content,
-            usage: data.usage
-          };
-        }
-        throw new Error('Invalid response format');
-      }
-    },
-
-    moonshot: {
-      url: 'https://api.moonshot.cn/v1/chat/completions',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      formatBody: (model, messages) => ({
-        model: model,
-        messages: messages,
-        stream: false
-      }),
-      parseResponse: (data) => {
-        if (data.choices && data.choices[0]) {
-          return {
-            content: data.choices[0].message.content,
-            usage: data.usage
-          };
-        }
-        throw new Error('Invalid response format');
-      }
-    },
-
-    zhipu: {
-      url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      formatBody: (model, messages) => ({
-        model: model,
-        messages: messages,
-        stream: false
-      }),
-      parseResponse: (data) => {
-        if (data.choices && data.choices[0]) {
-          return {
-            content: data.choices[0].message.content,
-            usage: data.usage
-          };
-        }
-        throw new Error('Invalid response format');
-      }
-    },
-
-    // OpenAI（GPT 系列，如 gpt-4o, gpt-4.1 等）
-    openai: {
-      url: 'https://api.openai.com/v1/chat/completions',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      formatBody: (model, messages) => ({
-        model,
-        messages,
-        stream: false
-      }),
-      parseResponse: (data) => {
-        if (data.choices && data.choices[0]) {
-          return {
-            content: data.choices[0].message.content,
-            usage: data.usage
-          };
-        }
-        throw new Error('Invalid response format');
-      }
-    },
-
-    // Grok（xAI，使用兼容 OpenAI 的 chat.completions 接口）
-    grok: {
-      url: 'https://api.x.ai/v1/chat/completions',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      formatBody: (model, messages) => ({
-        model,
-        messages,
-        stream: false
-      }),
-      parseResponse: (data) => {
-        if (data.choices && data.choices[0]) {
-          return {
-            content: data.choices[0].message.content,
-            usage: data.usage
-          };
-        }
-        throw new Error('Invalid response format');
-      }
-    },
-
-    // Gemini（Google / Google AI Studio）
-    gemini: {
-      // 这里使用统一的"兼容 OpenAI Chat Completions"代理风格，你可以按自己网关实际地址替换
-      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      formatBody: (model, messages) => ({
-        model,
-        messages,
-        stream: false
-      }),
-      parseResponse: (data) => {
-        if (data.choices && data.choices[0]) {
-          return {
-            content: data.choices[0].message.content,
-            usage: data.usage
-          };
-        }
-        throw new Error('Invalid response format');
-      }
-    }
-  };
-
-  const config = providers[provider];
-  if (!config) {
-    throw new Error(`Unsupported provider: ${provider}`);
-  }
-
-  try {
-    const response = await fetch(config.url, {
-      method: 'POST',
-      headers: config.headers,
-      body: JSON.stringify(config.formatBody(model, messages))
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    const parsed = config.parseResponse(data);
-
-    // 记录用量信息到本地 usage.json，便于财务部统计费用
-    try {
-      const usageInfo = parsed.usage || {};
-      const totalTokens = usageInfo.total_tokens
-        || (usageInfo.input_tokens || 0) + (usageInfo.output_tokens || 0)
-        || (usageInfo.prompt_tokens || 0) + (usageInfo.completion_tokens || 0);
-
-      const db = loadUsageDb();
-      db.records.push({
-        time: new Date().toISOString(),
-        provider,
-        model,
-        source: source || null,
-        usage: {
-          prompt_tokens: usageInfo.prompt_tokens || usageInfo.input_tokens || 0,
-          completion_tokens: usageInfo.completion_tokens || usageInfo.output_tokens || 0,
-          total_tokens: totalTokens || 0
-        }
-      });
-      saveUsageDb(db);
-    } catch (e) {
-      console.error('记录模型用量失败:', e);
-    }
-
-    return parsed;
-  } catch (error) {
-    console.error('API call error:', error);
-    throw error;
-  }
+// 客户列表
+function handleGetCustomers(req, res) {
+  const db = loadCustomersDb();
+  return ok(res, db.customers || [], '获取客户列表成功');
 }
 
-// 获取可用模型列表
-// 这是权威模型清单，前端启动时会请求此接口
-function handleGetModels(req, res) {
-  const models = {
-    qwen: {
-      name: '通义千问',
-      models: ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen-coder-plus']
-    },
-    deepseek: {
-      name: 'DeepSeek',
-      models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner']
-    },
-    moonshot: {
-      name: 'Kimi',
-      models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k']
-    },
-    zhipu: {
-      name: '智谱 GLM',
-      models: ['glm-4', 'glm-4-flash', 'glm-3-turbo']
-    },
-    openai: {
-      name: 'OpenAI（GPT）',
-      models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1']
-    },
-    grok: {
-      name: 'Grok（xAI）',
-      models: ['grok-2-latest', 'grok-2-mini', 'grok-3']
-    },
-    gemini: {
-      name: 'Gemini',
-      models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash']
-    }
-  };
-
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(models));
+// 获取单个客户
+function handleGetCustomerById(req, res, id) {
+  const db = loadCustomersDb();
+  const customer = db.customers.find(c => c.id === id);
+  if (!customer) {
+    return error(res, 404, 'CUSTOMER_NOT_FOUND', 'Customer not found');
+  }
+  return ok(res, customer, '获取客户成功');
 }
 
-// 简单的单价表（示例）：单位为“元 / 1K tokens”
-const TOKEN_PRICING = {
-  qwen: {
-    'qwen-max': 0.02,
-    'qwen-plus': 0.01,
-    'qwen-turbo': 0.005,
-    'qwen-coder-plus': 0.01
-  },
-  deepseek: {
-    'deepseek-chat': 0.01,
-    'deepseek-coder': 0.01,
-    'deepseek-reasoner': 0.02
-  },
-  moonshot: {
-    'moonshot-v1-8k': 0.02,
-    'moonshot-v1-32k': 0.04,
-    'moonshot-v1-128k': 0.08
-  },
-  zhipu: {
-    'glm-4': 0.02,
-    'glm-4-flash': 0.01,
-    'glm-3-turbo': 0.005
-  },
-  openai: {
-    'gpt-4o-mini': 0.015,
-    'gpt-4o': 0.03,
-    'gpt-4.1-mini': 0.015,
-    'gpt-4.1': 0.05
-  },
-  grok: {
-    'grok-2-latest': 0.03,
-    'grok-2-mini': 0.015,
-    'grok-3': 0.05
-  },
-  gemini: {
-    'gemini-1.5-pro': 0.03,
-    'gemini-1.5-flash': 0.015,
-    'gemini-2.0-flash': 0.02
-  }
-};
-
-// Coze 工作流调用（令牌优先从环境变量读取）
-const COZE_CONFIG = {
-  apiToken: process.env.COZE_API_TOKEN || process.env.COZE_WORKFLOW_TOKEN || ''
-};
-
-async function handleCozeWorkflow(req, res) {
+// 创建客户
+function handleCreateCustomer(req, res) {
   let body = '';
   req.on('data', chunk => body += chunk);
-  req.on('end', async () => {
+  req.on('end', () => {
     try {
       const payload = JSON.parse(body || '{}');
+      const db = loadCustomersDb();
 
-      const token = COZE_CONFIG.apiToken;
-      if (!token) {
-        throw new Error('Coze 工作流令牌未配置，请在环境变量 COZE_API_TOKEN 或 COZE_WORKFLOW_TOKEN 中设置。');
+      const customer = {
+        id: db.nextId++,
+        name: payload.name || '',
+        contact: payload.contact || '',
+        phone: payload.phone || '',
+        email: payload.email || '',
+        address: payload.address || '',
+        note: payload.note || '',
+        createdAt: new Date().toISOString()
+      };
+
+      db.customers.push(customer);
+      saveCustomersDb(db);
+
+      return ok(res, customer, '创建客户成功', 201);
+    } catch (e) {
+      console.error('Create customer error:', e);
+      return error(res, 400, 'INVALID_BODY', 'Invalid JSON body');
+    }
+  });
+}
+
+// 更新客户
+function handleUpdateCustomer(req, res, id) {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', () => {
+    try {
+      const payload = JSON.parse(body || '{}');
+      const db = loadCustomersDb();
+      const idx = db.customers.findIndex(c => c.id === id);
+      if (idx === -1) {
+        return error(res, 404, 'CUSTOMER_NOT_FOUND', 'Customer not found');
       }
 
-      // 使用工作流专属域名，不再直接调用通用 /v1/workflows/run
-      const url = 'https://cz5k6mzkgq.coze.site/run';
-      // 直接转发前端传入的参数；常见为 { topic: '...' }
-      const requestBody = payload && typeof payload === 'object' ? payload : {};
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Coze API error: ${response.status} - ${errorText}`);
-      }
-      
-      const data = await response.json();
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(data));
-    } catch (error) {
-      console.error('Coze workflow error:', error);
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: error.message }));
-    }
-  });
-}
-
-// 生成用量 / 费用报表：按厂商 + 模型汇总
-function handleUsageReport(req, res) {
-  const db = loadUsageDb();
-  const summary = {};
-  const summaryBySource = {};
-
-  db.records.forEach(rec => {
-    const prov = rec.provider || 'unknown';
-    const model = rec.model || 'unknown';
-    const u = rec.usage || {};
-    const prompt = u.prompt_tokens || 0;
-    const completion = u.completion_tokens || 0;
-    const total = u.total_tokens || (prompt + completion);
-
-    if (!summary[prov]) summary[prov] = {};
-    if (!summary[prov][model]) {
-      summary[prov][model] = {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0,
-        total_cost: 0
+      const old = db.customers[idx];
+      const updated = {
+        ...old,
+        name: payload.name !== undefined ? payload.name : old.name,
+        contact: payload.contact !== undefined ? payload.contact : old.contact,
+        phone: payload.phone !== undefined ? payload.phone : old.phone,
+        email: payload.email !== undefined ? payload.email : old.email,
+        address: payload.address !== undefined ? payload.address : old.address,
+        note: payload.note !== undefined ? payload.note : old.note
       };
+
+      db.customers[idx] = updated;
+      saveCustomersDb(db);
+
+      return ok(res, updated, '更新客户成功');
+    } catch (e) {
+      console.error('Update customer error:', e);
+      return error(res, 400, 'INVALID_BODY', 'Invalid JSON body');
     }
-
-    summary[prov][model].prompt_tokens += prompt;
-    summary[prov][model].completion_tokens += completion;
-    summary[prov][model].total_tokens += total;
-
-    // 按来源维度汇总（部门 / 员工 / 项目 / 小碟 / 顶部助手等）
-    const src = rec.source || {};
-    const srcType = src.type || 'unknown';
-    const srcLabel =
-      srcType === 'employee'
-        ? (src.employeeName || `员工#${src.employeeId || '-'}`)
-        : srcType === 'department'
-          ? (src.deptName || '某部门')
-          : srcType === 'project'
-            ? (src.projectName || '某项目')
-            : srcType === 'assistant'
-              ? '小碟助手'
-              : srcType === 'global-assistant'
-                ? '顶部 AI 助手'
-                : '未标注来源';
-
-    const sourceKey = `${srcType}:${srcLabel}`;
-    if (!summaryBySource[sourceKey]) {
-      summaryBySource[sourceKey] = {
-        type: srcType,
-        label: srcLabel,
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0,
-        total_cost: 0
-      };
-    }
-
-    summaryBySource[sourceKey].prompt_tokens += prompt;
-    summaryBySource[sourceKey].completion_tokens += completion;
-    summaryBySource[sourceKey].total_tokens += total;
   });
-
-  // 根据单价表估算费用
-  Object.entries(summary).forEach(([prov, models]) => {
-    Object.entries(models).forEach(([model, stat]) => {
-      const priceMap = TOKEN_PRICING[prov] || {};
-      const pricePerK = priceMap[model] || 0; // 元 / 1K tokens
-      stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
-    });
-  });
-
-  Object.values(summaryBySource).forEach(stat => {
-    // 这里简单用「unknown/模型平均价」兜底；严格场景可以带上 provider/model 再精算
-    // 暂时按统一 0.02 元 / 1K tokens 估算
-    const pricePerK = 0.02;
-    stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
-  });
-
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ summary, summaryBySource }));
 }
 
-// 获取详细用量记录
-function handleUsageRecords(req, res) {
-  const db = loadUsageDb();
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(db.records || []));
-}
-
-// 构造简单的 RTF 文本，供 Word 打开（.doc / RTF）
-function buildUsageReportRtf(summary, summaryBySource) {
-  let rtf = '{\\rtf1\\ansi\\deff0\n';
-  rtf += '{\\b 模型用量与费用报表}\\par\n';
-  rtf += `生成时间：${new Date().toLocaleString()}\\par\\par\n`;
-
-  // 按厂商 + 模型
-  Object.entries(summary).forEach(([prov, models]) => {
-    rtf += `{\\b 提供商：}${prov} \\par\n`;
-    rtf += '模型\tPrompt Tokens\tCompletion Tokens\tTotal Tokens\t预计成本(元)\\par\n';
-    Object.entries(models).forEach(([model, stat]) => {
-      rtf += `${model}\t${stat.prompt_tokens || 0}\t${stat.completion_tokens || 0}\t${stat.total_tokens || 0}\t${(stat.total_cost || 0).toFixed(4)}\\par\n`;
-    });
-    rtf += '\\par\n';
-  });
-
-  // 按来源
-  const sourceKeys = Object.keys(summaryBySource || {});
-  if (sourceKeys.length > 0) {
-    rtf += '{\\b 按来源汇总（部门 / 员工 / 项目 / 助手）}\\par\n';
-    rtf += '来源类型\t来源名称\tTotal Tokens\t预计成本(元)\\par\n';
-    sourceKeys.forEach((key) => {
-      const stat = summaryBySource[key];
-      rtf += `${stat.type}\t${stat.label}\t${stat.total_tokens || 0}\t${(stat.total_cost || 0).toFixed(4)}\\par\n`;
-    });
+// 删除客户
+function handleDeleteCustomer(req, res, id) {
+  const db = loadCustomersDb();
+  const idx = db.customers.findIndex(c => c.id === id);
+  if (idx === -1) {
+    return error(res, 404, 'CUSTOMER_NOT_FOUND', 'Customer not found');
   }
 
-  rtf += '}';
-  return rtf;
-}
+  const deletedCustomer = db.customers.splice(idx, 1)[0];
+  saveCustomersDb(db);
 
-// 导出 Word/RTF 报表
-function handleUsageReportDoc(req, res) {
-  const db = loadUsageDb();
-  const summary = {};
-  const summaryBySource = {};
-
-  db.records.forEach(rec => {
-    const prov = rec.provider || 'unknown';
-    const model = rec.model || 'unknown';
-    const u = rec.usage || {};
-    const prompt = u.prompt_tokens || 0;
-    const completion = u.completion_tokens || 0;
-    const total = u.total_tokens || (prompt + completion);
-
-    if (!summary[prov]) summary[prov] = {};
-    if (!summary[prov][model]) {
-      summary[prov][model] = {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0,
-        total_cost: 0
-      };
-    }
-
-    summary[prov][model].prompt_tokens += prompt;
-    summary[prov][model].completion_tokens += completion;
-    summary[prov][model].total_tokens += total;
-
-    const src = rec.source || {};
-    const srcType = src.type || 'unknown';
-    const srcLabel =
-      srcType === 'employee'
-        ? (src.employeeName || `员工#${src.employeeId || '-'}`)
-        : srcType === 'department'
-          ? (src.deptName || '某部门')
-          : srcType === 'project'
-            ? (src.projectName || '某项目')
-            : srcType === 'assistant'
-              ? '小碟助手'
-              : srcType === 'global-assistant'
-                ? '顶部 AI 助手'
-                : '未标注来源';
-
-    const sourceKey = `${srcType}:${srcLabel}`;
-    if (!summaryBySource[sourceKey]) {
-      summaryBySource[sourceKey] = {
-        type: srcType,
-        label: srcLabel,
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0,
-        total_cost: 0
-      };
-    }
-
-    summaryBySource[sourceKey].prompt_tokens += prompt;
-    summaryBySource[sourceKey].completion_tokens += completion;
-    summaryBySource[sourceKey].total_tokens += total;
-  });
-
-  // 套用与 JSON 报表相同的单价逻辑
-  Object.entries(summary).forEach(([prov, models]) => {
-    Object.entries(models).forEach(([model, stat]) => {
-      const priceMap = TOKEN_PRICING[prov] || {};
-      const pricePerK = priceMap[model] || 0;
-      stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
-    });
-  });
-  Object.values(summaryBySource).forEach(stat => {
-    const pricePerK = 0.02;
-    stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
-  });
-
-  const rtf = buildUsageReportRtf(summary, summaryBySource);
-  const filename = `模型用量报表_${new Date().toISOString().slice(0, 10)}.doc`;
-
-   // 默认将报表文件持久化到“财务部”文件夹中，方便财务部归档
-  try {
-    const financeDir = path.join(deptReportRootDir, '财务部');
-    if (!fs.existsSync(financeDir)) {
-      fs.mkdirSync(financeDir, { recursive: true });
-    }
-    const filePath = path.join(financeDir, filename);
-    fs.writeFileSync(filePath, rtf, 'utf-8');
-    console.log('💾 已生成财务部报表文件:', filePath);
-  } catch (e) {
-    console.error('保存财务部报表失败:', e);
-  }
-
-  res.writeHead(200, {
-    'Content-Type': 'application/msword; charset=utf-8',
-    'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
-  });
-  res.end(rtf, 'utf-8');
-}
-
-// 返回原始用量记录列表，供财务分析页做更细的筛选 / 统计
-function handleUsageRecords(req, res) {
-  const db = loadUsageDb();
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(db.records || []));
-}
-
-// 导出 Excel 报表
-function handleUsageReportXlsx(req, res) {
-  const db = loadUsageDb();
-  const summary = {};
-  const summaryBySource = {};
-  const allRecords = [];
-
-  db.records.forEach(rec => {
-    const prov = rec.provider || 'unknown';
-    const model = rec.model || 'unknown';
-    const u = rec.usage || {};
-    const prompt = u.prompt_tokens || 0;
-    const completion = u.completion_tokens || 0;
-    const total = u.total_tokens || (prompt + completion);
-
-    allRecords.push({
-      '时间': rec.time ? new Date(rec.time).toLocaleString('zh-CN') : '',
-      '提供商': prov,
-      '模型': model,
-      'Prompt Tokens': prompt,
-      'Completion Tokens': completion,
-      'Total Tokens': total,
-      '来源类型': rec.source?.type || 'unknown',
-      '来源名称': rec.source?.type === 'employee' ? rec.source?.employeeName :
-                  rec.source?.type === 'department' ? rec.source?.deptName :
-                  rec.source?.type === 'project' ? rec.source?.projectName :
-                  rec.source?.type === 'assistant' ? '小碟助手' :
-                  rec.source?.type === 'global-assistant' ? '顶部 AI 助手' : '未知'
-    });
-
-    if (!summary[prov]) summary[prov] = {};
-    if (!summary[prov][model]) {
-      summary[prov][model] = {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0,
-        total_cost: 0
-      };
-    }
-
-    summary[prov][model].prompt_tokens += prompt;
-    summary[prov][model].completion_tokens += completion;
-    summary[prov][model].total_tokens += total;
-
-    const src = rec.source || {};
-    const srcType = src.type || 'unknown';
-    const srcLabel =
-      srcType === 'employee'
-        ? (src.employeeName || `员工#${src.employeeId || '-'}`)
-        : srcType === 'department'
-          ? (src.deptName || '某部门')
-          : srcType === 'project'
-            ? (src.projectName || '某项目')
-            : srcType === 'assistant'
-              ? '小碟助手'
-              : srcType === 'global-assistant'
-                ? '顶部 AI 助手'
-                : '未标注来源';
-
-    const sourceKey = `${srcType}:${srcLabel}`;
-    if (!summaryBySource[sourceKey]) {
-      summaryBySource[sourceKey] = {
-        type: srcType,
-        label: srcLabel,
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0,
-        total_cost: 0
-      };
-    }
-
-    summaryBySource[sourceKey].prompt_tokens += prompt;
-    summaryBySource[sourceKey].completion_tokens += completion;
-    summaryBySource[sourceKey].total_tokens += total;
-  });
-
-  Object.entries(summary).forEach(([prov, models]) => {
-    Object.entries(models).forEach(([model, stat]) => {
-      const priceMap = TOKEN_PRICING[prov] || {};
-      const pricePerK = priceMap[model] || 0;
-      stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
-    });
-  });
-  Object.values(summaryBySource).forEach(stat => {
-    const pricePerK = 0.02;
-    stat.total_cost = +(stat.total_tokens / 1000 * pricePerK).toFixed(4);
-  });
-
-  const wb = XLSX.utils.book_new();
-
-  const wsSummary = XLSX.utils.aoa_to_sheet([
-    ['模型用量与费用报表'],
-    [`生成时间：${new Date().toLocaleString('zh-CN')}`],
-    [''],
-    ['===== 费用汇总 ====='],
-    ['总调用次数', db.records.length],
-    ['总 Prompt Tokens', Object.values(summary).reduce((a, b) => a + Object.values(b).reduce((c, d) => c + d.prompt_tokens, 0), 0)],
-    ['总 Completion Tokens', Object.values(summary).reduce((a, b) => a + Object.values(b).reduce((c, d) => c + d.completion_tokens, 0), 0)],
-    ['总 Tokens', Object.values(summary).reduce((a, b) => a + Object.values(b).reduce((c, d) => c + d.total_tokens, 0), 0)],
-    ['总预计费用(元)', Object.values(summary).reduce((a, b) => a + Object.values(b).reduce((c, d) => c + d.total_cost, 0), 0).toFixed(4)],
-    [''],
-    ['===== 按提供商-模型 ====='],
-    ['提供商', '模型', 'Prompt Tokens', 'Completion Tokens', 'Total Tokens', '预计成本(元)']
-  ]);
-
-  Object.entries(summary).forEach(([prov, models]) => {
-    Object.entries(models).forEach(([model, stat]) => {
-      XLSX.utils.sheet_add_aoa(wsSummary, [[prov, model, stat.prompt_tokens, stat.completion_tokens, stat.total_tokens, stat.total_cost]], { origin: -1 });
-    });
-  });
-
-  XLSX.utils.sheet_add_aoa(wsSummary, [[''], ['===== 按来源统计 ====='], ['来源类型', '来源名称', 'Prompt Tokens', 'Completion Tokens', 'Total Tokens', '预计成本(元)']], { origin: -1 });
-
-  Object.values(summaryBySource).forEach(stat => {
-    XLSX.utils.sheet_add_aoa(wsSummary, [[stat.type, stat.label, stat.prompt_tokens, stat.completion_tokens, stat.total_tokens, stat.total_cost]], { origin: -1 });
-  });
-
-  wsSummary['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsSummary, '费用汇总');
-
-  const wsDetail = XLSX.utils.json_to_sheet(allRecords);
-  wsDetail['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 20 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 12 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsDetail, '详细记录');
-
-  const xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
-  const filename = `模型用量报表_${new Date().toISOString().slice(0, 10)}.xlsx`;
-
-  try {
-    const financeDir = path.join(deptReportRootDir, '财务部');
-    if (!fs.existsSync(financeDir)) {
-      fs.mkdirSync(financeDir, { recursive: true });
-    }
-    const filePath = path.join(financeDir, filename);
-    fs.writeFileSync(filePath, xlsxBuffer);
-    console.log('💾 已生成财务部报表文件:', filePath);
-  } catch (e) {
-    console.error('保存财务部报表失败:', e);
-  }
-
-  res.writeHead(200, {
-    'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
-  });
-  res.end(xlsxBuffer);
+  return ok(res, { deleted: deletedCustomer }, '删除客户成功');
 }
 
 // 静态文件服务
 function serveStaticFile(req, res, pathname) {
-  let filePath = pathname === '/' ? '/index.html' : pathname;
-  filePath = path.join(__dirname, '..', 'frontend', filePath);
+  // 安全处理路径
+  const safePath = pathname.replace(/\.{2,}/g, '');
+  let filePath = path.join(__dirname, '..', 'frontend', safePath);
 
+  // 默认首页
+  if (pathname === '/' || pathname === '/index.html') {
+    filePath = path.join(__dirname, '..', 'frontend', 'index.html');
+  }
+
+  // 检查文件是否存在
+  if (!fs.existsSync(filePath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not Found');
+    return;
+  }
+
+  // 获取文件扩展名并设置 Content-Type
   const ext = path.extname(filePath).toLowerCase();
   const mimeTypes = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
-    '.gif': 'image/gif'
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon'
   };
 
   const contentType = mimeTypes[ext] || 'application/octet-stream';
 
-  fs.readFile(filePath, (err, content) => {
+  // 读取并返回文件
+  fs.readFile(filePath, (err, data) => {
     if (err) {
-      if (err.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('File not found');
-      } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Server error');
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Internal Server Error');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(data);
+  });
+}
+
+// Coze 工作流处理
+async function handleCozeWorkflow(req, res) {
+  let body = '';
+  req.on('data', (chunk) => (body += chunk));
+  req.on('end', async () => {
+    try {
+      const payload = JSON.parse(body || '{}');
+      const { topic, workflow_id } = payload;
+
+      if (!topic) {
+        return error(res, 400, 'TOPIC_REQUIRED', '缺少必要参数: topic');
       }
-    } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content);
+
+      const COZE_API_TOKEN = process.env.COZE_API_TOKEN;
+      const COZE_WORKFLOW_ID = workflow_id || process.env.COZE_WORKFLOW_ID || 'video-script-generator-001';
+
+      if (!COZE_API_TOKEN) {
+        logger.error('Coze API Token 未配置');
+        return error(res, 500, 'TOKEN_NOT_CONFIGURED', 'Coze API Token 未配置，请设置环境变量 COZE_API_TOKEN');
+      }
+
+      logger.info('调用 Coze 工作流', { workflow_id: COZE_WORKFLOW_ID, topic: topic.substring(0, 50) });
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+
+      try {
+        // 首先尝试 Workflow API
+        const workflowRequestBody = {
+          workflow_id: COZE_WORKFLOW_ID,
+          parameters: { topic },
+          user_id: 'user_' + Date.now(),
+          request_id: `req_${Date.now()}`
+        };
+        
+        logger.info('Coze Workflow API 请求', { url: 'https://api.coze.cn/v1/workflows/run', body: workflowRequestBody });
+        
+        let response = await fetch('https://api.coze.cn/v1/workflows/run', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${COZE_API_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(workflowRequestBody),
+          signal: controller.signal
+        });
+
+        // 如果 Workflow API 返回 500，尝试 Bot Chat API
+        if (response.status === 500) {
+          logger.info('Workflow API 返回 500，尝试 Bot Chat API');
+          
+          const chatRequestBody = {
+            bot_id: COZE_WORKFLOW_ID,
+            user_id: 'user_' + Date.now(),
+            stream: false,
+            auto_save_history: true,
+            additional_messages: [
+              {
+                role: 'user',
+                content: topic,
+                content_type: 'text'
+              }
+            ]
+          };
+          
+          logger.info('Coze Bot Chat API 请求', { url: 'https://api.coze.cn/v3/chat', body: { ...chatRequestBody, additional_messages: [{ role: 'user', content: topic.substring(0, 30) + '...' }] } });
+          
+          response = await fetch('https://api.coze.cn/v3/chat', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${COZE_API_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(chatRequestBody),
+            signal: controller.signal
+          });
+        }
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logger.error('Coze API 返回错误', { status: response.status, error: errorText });
+          return error(res, response.status, 'COZE_API_ERROR', `Coze API 错误: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        logger.info('Coze API 调用成功', { workflow_id: COZE_WORKFLOW_ID });
+
+        // 处理不同 API 的响应格式
+        let scriptContent;
+        if (data.data?.output) {
+          scriptContent = data.data.output;
+        } else if (data.output) {
+          scriptContent = data.output;
+        } else if (data.result) {
+          scriptContent = data.result;
+        } else if (data.messages && data.messages.length > 0) {
+          // Bot Chat API 响应格式
+          scriptContent = data.messages[data.messages.length - 1].content;
+        } else {
+          scriptContent = data;
+        }
+
+        return ok(res, {
+          script_content: scriptContent,
+          raw_response: data
+        }, '视频脚本生成成功');
+
+      } catch (fetchError) {
+        clearTimeout(timeout);
+        if (fetchError.name === 'AbortError') {
+          logger.error('Coze API 调用超时');
+          return error(res, 504, 'TIMEOUT', 'Coze API 调用超时，请稍后重试');
+        }
+        throw fetchError;
+      }
+
+    } catch (err) {
+      logger.error('Coze 工作流处理失败', { error: err.message, stack: err.stack });
+      return error(res, 500, 'WORKFLOW_ERROR', '工作流处理失败: ' + err.message);
     }
   });
+}
+
+// 获取模型列表
+function handleGetModels(req, res) {
+  const models = [
+    { provider: 'qwen', name: '通义千问', models: ['qwen-turbo', 'qwen-plus', 'qwen-max'] },
+    { provider: 'deepseek', name: 'DeepSeek', models: ['deepseek-chat', 'deepseek-coder'] },
+    { provider: 'moonshot', name: 'Kimi', models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'] },
+    { provider: 'zhipu', name: '智谱', models: ['glm-4', 'glm-4-flash'] },
+    { provider: 'openai', name: 'OpenAI', models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
+    { provider: 'grok', name: 'Grok', models: ['grok-1'] },
+    { provider: 'gemini', name: 'Gemini', models: ['gemini-pro', 'gemini-pro-vision'] }
+  ];
+  return ok(res, models, '获取模型列表成功');
 }
 
 // 统一使用 8080 端口，方便前端和后端在同一端口下工作
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
+  logger.info('服务器启动成功', {
+    port: PORT,
+    url: `http://localhost:${PORT}`,
+    env: process.env.NODE_ENV || 'development'
+  });
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📁 Serving frontend from: ${path.join(__dirname, '..', 'frontend')}`);
+  console.log(`🔐 默认登录账号: admin / admin123`);
   // 初始化各部门报表文件夹
   initDeptReportDirs();
   console.log(`📂 部门报表根目录: ${deptReportRootDir}`);

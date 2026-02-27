@@ -1,0 +1,21 @@
+{
+  "voices": [
+    {
+      "speakerId": "______1772107556140",
+      "displayName": "三角洲老太",
+      "lang": "zh",
+      "ownerType": "custom",
+      "ownerId": null,
+      "createdAt": "2026-02-26T12:05:56.156Z",
+      "updatedAt": "2026-02-26T12:05:56.156Z",
+      "lastUploadFiles": [
+        "dataset\\______1772107556140\\raw\\tmpm5clv9wg.wav"
+      ],
+      "uploadCount": 1,
+      "status": "ready",
+      "mode": "zero-shot",
+      "sovitsPath": "GPT_SoVITS/pretrained_models/s2G488k.pth",
+      "gptPath": "GPT_SoVITS/pretrained_models/s1bert25hz-2kh-longer-epoch=68e-step=50232.ckpt"
+    }
+  ]
+}

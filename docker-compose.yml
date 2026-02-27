@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gs-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./logs:/app/logs
+    networks:
+      - gs-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端静态文件服务（可选，也可以用后端直接服务）
+  frontend:
+    image: nginx:alpine
+    container_name: gs-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - gs-network
+
+  # GPT-SoVITS 语音服务（可选）
+  gpt-sovits:
+    image: breakstring/gpt-sovits:latest
+    container_name: gs-tts
+    restart: unless-stopped
+    ports:
+      - "9880:9880"
+      - "9871-9874:9871-9874"
+    volumes:
+      - ./GPT-SoVITS-beta0706/dataset:/app/dataset
+      - ./GPT-SoVITS-beta0706/pretrained_models:/app/pretrained_models
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    shm_size: '16gb'
+    networks:
+      - gs-network
+    profiles:
+      - with-tts  # 使用 docker-compose --profile with-tts up 启动
+
+networks:
+  gs-network:
+    driver: bridge
+
+volumes:
+  gs-data:
+    driver: local
